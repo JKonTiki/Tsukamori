@@ -1,0 +1,53 @@
+{
+  "name": "Francoise",
+  "version": "0.0.1",
+  "description": "promettez-moi d'être bien sage",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JKonTiki/Francoise"
+  },
+  "devDependencies": {
+    "babel-core": "^6.24.0",
+    "babel-preset-env": "^1.2.2",
+    "babel-preset-es2015": "^6.24.0",
+    "babelify": "^7.3.0",
+    "browser-sync": "^2.18.7",
+    "browserify": "^14.1.0",
+    "buffer": "^5.0.5",
+    "child-process-promise": "^2.2.1",
+    "globby": "^6.1.0",
+    "gulp": "^3.9.1",
+    "gulp-autoprefixer": "^3.1.1",
+    "gulp-babel": "^6.1.2",
+    "gulp-browserify-globs": "^0.1.2",
+    "gulp-concat": "^2.6.1",
+    "gulp-declare": "^0.3.0",
+    "gulp-exec": "^2.1.3",
+    "gulp-imagemin": "^3.1.1",
+    "gulp-inject-string": "^1.1.0",
+    "gulp-jshint": "^2.0.4",
+    "gulp-live-server": "0.0.30",
+    "gulp-minify-css": "^1.2.4",
+    "gulp-nunjucks-render": "^2.0.0",
+    "gulp-open": "^2.0.0",
+    "gulp-plumber": "^1.1.0",
+    "gulp-rename": "^1.2.2",
+    "gulp-sass": "^3.1.0",
+    "gulp-sequence": "^0.4.6",
+    "gulp-sourcemaps": "^2.5.0",
+    "gulp-uglify": "^2.1.2",
+    "gulp-util": "^3.0.8",
+    "gulp-wrap": "^0.13.0",
+    "gutil": "^1.6.4",
+    "jshint": "^2.9.4",
+    "jshint-stylish": "^2.2.1",
+    "minimist": "^1.2.0",
+    "path-exists": "^3.0.0",
+    "through": "^2.3.8"
+  },
+  "dependencies": {
+    "body-parser": "^1.17.1",
+    "express": "^4.15.2"
+  }
+}

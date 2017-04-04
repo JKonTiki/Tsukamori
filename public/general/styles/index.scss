@@ -1,0 +1,20 @@
+// vendor
+@import 'vendor/_normalize';
+@import 'vendor/_reset';
+
+//tools, helpers, variables, and other config
+@import 'abstracts/_config';
+@import 'abstracts/_interfaces';
+@import 'abstracts/_mixins';
+
+//general things
+@import 'base/_general';
+
+//this (next line) section header is a flag for the gulpfile to insert auto-generated pages. touch with caution!
+//!PAGES!
+@import './../../pages/error/_error-styles';
+@import './../../pages/home/_home-styles';
+
+//this (next line) section header is a flag for the gulpfile to insert auto-generated components. touch with caution!
+//!COMPONENTS!
+@import './../../components/board-interactive/_board-interactive-styles';

@@ -1,0 +1,9 @@
+node_modules
+.sass-cache
+.DS_Store
+build
+tmp
+public/scripts.js
+public/scripts.js.map
+public/index.html
+public/styles.css
