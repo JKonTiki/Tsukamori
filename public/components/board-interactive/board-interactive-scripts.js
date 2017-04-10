@@ -1,102 +1,137 @@
 /* jshint esversion: 6 */
 
-exports.mount = function(){
-  var boardWidth = 1500;
-  var boardHeight = 1500;
-  var colNum = 100;
-  var rowNum = 20;
-  var pxlsPerCol = boardWidth/colNum;
-  var pxlsPerRow = boardWidth/rowNum;
+const Constants = require('./../../general/scripts/Constants');
 
-  var board = document.querySelector('#board-interactive');
-  board.width = boardWidth;
-  board.height = boardHeight;
-  var context = board.getContext('2d');
-  var radius = 40;
-  var mouseHeld = false;
+const BOARD_WIDTH = 300;
+const BOARD_HEIGHT = 300;
+const BRUSH_RADIUS = 20;
 
-  context.lineWidth = radius * 2;
+var roundCount = function(count, type){
+  let pxlCapacity;
+  if (type === Constants.column) {
+    pxlCapacity = BOARD_WIDTH;
+  } else if (type === Constants.row) {
+    pxlCapacity = BOARD_HEIGHT;
+  } else {
+    console.error('Something is wrong with your Constants');
+  }
+  let remainder = pxlCapacity % count;
+  if (remainder === 0) {
+    return count;
+  } else {
+    return Math.floor(count-remainder);
+  }
+}
 
-  var putPoint = function(event){
-    if (mouseHeld) {
-      if (event.srcElement === board) {
-        context.lineTo(event.offsetX, event.offsetY);
-        context.stroke();
-        context.beginPath();
-        context.arc(event.offsetX, event.offsetY, radius, 0, 2 * Math.PI, false);
-        context.fill();
-        context.beginPath();
-        context.moveTo(event.offsetX, event.offsetY);
-      } else {
-        // if mouse moves off canvas, we want to reset path beginning pts
-        context.beginPath();
-      }
+var putPoint = function(event, _mouseHeld, _boardDom, _context, _radius){
+  if (_mouseHeld) {
+    if (event.srcElement === _boardDom) {
+      _context.lineTo(event.offsetX, event.offsetY);
+      _context.stroke();
+      _context.beginPath();
+      _context.arc(event.offsetX, event.offsetY, _radius, 0, 2 * Math.PI, false);
+      _context.fill();
+      _context.beginPath();
+      _context.moveTo(event.offsetX, event.offsetY);
+    } else {
+      // if mouse moves off canvas, we want to reset path beginning pts
+      _context.beginPath();
     }
   }
+}
 
-  document.addEventListener('mousemove', putPoint);
+var getPxlData = function(_context, _boardWidth, _boardHeight, _pxlsPerCol, _pxlsPerRow){
+  var data = _context.getImageData(0, 0, _boardWidth, _boardHeight).data;
+  // TODO handle decimal values for pxlsPer...
+  console.log('PXLS_PER_COL', _pxlsPerCol);
+  console.log('PXLS_PER_ROW', _pxlsPerRow);
+  var parsedDataByCol = {};
+  var currentRow = 0;
+  // for now we start at 3 because we are only checking black color value
+  for (var i = 3; i < data.length; i++) {
+    // there are four values per pixel. this will be range 1-[_boardWidth]
+    // First we get our row
+    var pxlPositionHorz = (i+1)/4;
+    var pxlPositionVert = pxlPositionHorz/_boardWidth;
+    var thisRow = Math.floor(pxlPositionVert/_pxlsPerRow);
+    if (thisRow !== currentRow) {
+      // set to beginning of new row in case we overstep
+      // reverse engineering position in imageData array after rounding to row
+      i = thisRow * _pxlsPerRow * _boardWidth * 4 + 3;
+      currentRow = thisRow;
+    }
+    // if non-zero value for canvas pixel
+    if (data[i] !== 0) {
+      // we need the index for beginning of our pxlRow, or pxlPositionVert
+      var prevPxlsPassed = Math.floor(pxlPositionVert) * _boardWidth * 4;
+      var thisCol = Math.floor((i - prevPxlsPassed - 3)/(4 * _pxlsPerCol));
+      if (!parsedDataByCol[`col${thisCol}`]) {
+        parsedDataByCol[`col${thisCol}`] = {};
+      }
+      if (!parsedDataByCol[`col${thisCol}`][currentRow]) {
+        parsedDataByCol[`col${thisCol}`][currentRow] = 1;
+      } else {
+        parsedDataByCol[`col${thisCol}`][currentRow]++;
+      }
+      // }
+    }
+    // skip non-black color values and to next column
+    i += (4*_pxlsPerCol-1);
+  }
+  return parsedDataByCol;
+}
 
+var visualizeMIDI = function(data, _context, _boardWidth, _boardHeight, _pxlsPerCol, _pxlsPerRow){
+  console.log(data);
+  _context.clearRect(0, 0, _boardWidth, _boardHeight);
+  for (var column in data){
+    let colIndex = column.slice(3);
+    let width = _pxlsPerCol;
+    let height = _pxlsPerRow;
+    let x = colIndex * _pxlsPerCol;
+    for (var rowIndex in data[column]){
+      let y = rowIndex * _pxlsPerRow;
+      // if (data[column][rowIndex] >= 25) {
+        // console.log(x, y, width, height);
+        _context.fillRect(x, y, width, height);
+      // }
+    }
+  }
+  // context.fillRect(PXLS_PER_COL*3, 0, PXLS_PER_COL, PXLS_PER_ROW);
+}
+
+exports.mount = function(){
+  // counts should be manually set, but must pass through this helper function
+  const COL_COUNT = roundCount(12.5, Constants.column);
+  const ROW_COUNT = roundCount(13, Constants.row);
+  const PXLS_PER_COL = BOARD_WIDTH / COL_COUNT;
+  const PXLS_PER_ROW = BOARD_WIDTH / ROW_COUNT;
+
+  var boardDom = document.querySelector('#board-interactive');
+  boardDom.width = BOARD_WIDTH;
+  boardDom.height = BOARD_HEIGHT;
+
+  var context = boardDom.getContext('2d');
+  context.lineWidth = BRUSH_RADIUS * 2;
+  var mouseHeld = false;
+
+  var putPointProxy = function(event){
+    putPoint(event, mouseHeld, boardDom, context, BRUSH_RADIUS);
+  }
+
+  document.addEventListener('mousemove', putPointProxy);
   document.addEventListener('mousedown', function(event){
     mouseHeld = true;
-    putPoint(event);
+    putPointProxy(event);
   });
-
   document.addEventListener('mouseup', function(event){
     mouseHeld = false;
     context.beginPath();
-    var parsedData = getPxlData();
-    // visualizeMIDI(parsedData);
   });
 
-  var getPxlData = function(){
-    var data = context.getImageData(0, 0, boardWidth, boardHeight).data;
-    // TODO handle decimal values for pxlsPer...
-    console.log('pxlsPerCol', pxlsPerCol);
-    console.log('pxlsPerRow', pxlsPerRow);
-    var parsedDataByCol = {};
-    var cachedRow = 0;
-    for (var i = 3; i < data.length; i++) {
-      // reset i we've crossed to new row
-      var thisRow = Math.floor((i / boardWidth)/pxlsPerRow);
-      if (thisRow !== cachedRow) {
-        // set to beginning of new row in case we overstep
-        i = boardWidth * thisRow * pxlsPerRow + 3;
-        cachedRow = thisRow;
-      }
-      // if non-zero value
-      if (data[i] !== 0) {
-        var pxlsPassed = Math.floor(i/(boardWidth*4))*boardWidth*4;
-        var thisCol = (i - pxlsPassed-3)/(4*pxlsPerCol);
-        if (!parsedDataByCol[`col${thisCol}`]) {
-          parsedDataByCol[`col${thisCol}`] = {};
-        }
-        // we add it only once, when it cross threshold of 2
-        if (!parsedDataByCol[`col${thisCol}`][thisRow]) {
-          parsedDataByCol[`col${thisCol}`][thisRow] = 1;
-        } else {
-          parsedDataByCol[`col${thisCol}`][thisRow]++;
-        }
-        // }
-      }
-      // skip non-black color values and to next column
-      i += (4*pxlsPerCol-1);
-    }
-    return parsedDataByCol;
-  }
-
-  var visualizeMIDI = function(data){
-    console.log(data);
-    context.clearRect(0, 0, boardWidth, boardHeight);
-    for (var column in data){
-      let colNum = column.slice(3);
-      let width = pxlsPerCol;
-      let height = pxlsPerRow;
-      let x = colNum*pxlsPerCol;
-      for (var rowNum in data[column]){
-        let y = rowNum*pxlsPerRow;
-        context.fillRect(x, y, width, height);
-      }
-    }
-  }
+  var testButton = document.querySelector('#testButton').addEventListener('click', function(){
+    var parsedData = getPxlData(context, BOARD_WIDTH, BOARD_HEIGHT, PXLS_PER_COL, PXLS_PER_ROW);
+    visualizeMIDI(parsedData, context, BOARD_WIDTH, BOARD_HEIGHT, PXLS_PER_COL, PXLS_PER_ROW);
+  });
 
 };

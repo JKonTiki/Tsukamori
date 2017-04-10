@@ -4,7 +4,7 @@ var path = require('path');
 
 var port = process.env.PORT;
 var app = express();
-
+console.log(process.env.PORT);
 var indexLocation = 'public';
 if (process.env.NODE_ENV === 'production'){
   indexLocation = 'build';
@@ -23,6 +23,8 @@ app.get('/', function(req, res){
 })
 
 // run server
-app.listen(port, function(){
-  console.log(`Server launched on port ${port}`);
-})
+if (port) {
+  app.listen(port, function(){
+      console.log(`Server launched on port ${port}`);
+  })
+}

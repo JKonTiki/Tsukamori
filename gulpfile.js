@@ -378,7 +378,7 @@ gulp.task(commands.serve, function() {
     }
     // launch our server
     var port = 3000;
-    var server = gls('app.js', {env: {NODE_ENV: env, PORT: port}});
+    var server = gls('app.js', {env: {NODE_ENV: env, PORT: port}}, false);
     server.start();
     // we use browserSync's great live reloading, listening through proxy server
     browserSync.init({
