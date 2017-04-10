@@ -15,21 +15,36 @@ exports.putPoint = function(event, _mouseHeld, _boardDom, _context, _radius){
   }
 }
 
-exports.getPxlData = function(_context, _boardWidth, _boardHeight, _pxlsPerCol, _pxlsPerRow){
+exports.getPxlData = function(_context, _boardWidth, _boardHeight, _pxlsPerCol, _pxlsPerRow, _pxlRowsToCount){
+  if (_pxlsPerCol === 0 || _pxlsPerRow === 0) {
+    console.error('Column and Row counts must be smaller than corresponding board dimens');
+    return;
+  }
   var data = _context.getImageData(0, 0, _boardWidth, _boardHeight).data;
   // this parser is predicated on ^^ this data structure, which is an array of every pixel going row by row (LtR)
-  console.log('PXLS_PER_COL', _pxlsPerCol);
-  console.log('PXLS_PER_ROW', _pxlsPerRow);
+  // for each of our rows, we count _pxlRowsToCount pxl rows along the way as checkpoints
+  var rowPxlsToSkip = Math.floor(_pxlsPerRow/_pxlRowsToCount);
   var parsedDataByCol = {};
   var currentRow = 0;
-  // we start at 3 because we are only checking black color value
+  var currentPxlRow = 0;
+  // there are four values per pixel (RGB & Key).
+  // we start at 3 because we are only checking key color value
   for (var i = 3; i < data.length; i++) {
-    // there are four values per pixel. this will be range 1-[_boardWidth]
     // First we get our row
+    // pxlPositionHorz will be range 1-[_boardWidth]
     var pxlPositionHorz = (i+1)/4;
-    var pxlPositionVert = pxlPositionHorz/_boardWidth;
+    var pxlPositionVert = Math.floor(pxlPositionHorz/_boardWidth);
+    // upon changing pxlRows we jump to next desired PxlRow
+    if (currentPxlRow !== pxlPositionVert) {
+      currentPxlRow = pxlPositionVert;
+      // when we get to the first pxlRow to skip
+      if (currentPxlRow % rowPxlsToSkip === 1) {
+        // set i to beginning of desired (post pxlRow jump) row
+        i += _boardWidth * 4 * 3;
+      }
+    }
     var thisRow = Math.floor(pxlPositionVert/_pxlsPerRow);
-    if (thisRow !== currentRow) {
+    if (currentRow !== thisRow) {
       // set to beginning of new row in case we overstep
       // reverse engineering position in imageData array after rounding to row
       i = thisRow * _pxlsPerRow * _boardWidth * 4 + 3;
@@ -38,7 +53,7 @@ exports.getPxlData = function(_context, _boardWidth, _boardHeight, _pxlsPerCol, 
     // if non-zero value for canvas pixel
     if (data[i] !== 0) {
       // we need the index for beginning of our pxlRow, or pxlPositionVert
-      var prevPxlsPassed = Math.floor(pxlPositionVert) * _boardWidth * 4;
+      var prevPxlsPassed = pxlPositionVert * _boardWidth * 4;
       var thisCol = Math.floor((i - prevPxlsPassed - 3)/(4 * _pxlsPerCol));
       if (!parsedDataByCol[`col${thisCol}`]) {
         parsedDataByCol[`col${thisCol}`] = {};

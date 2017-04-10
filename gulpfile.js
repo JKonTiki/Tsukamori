@@ -62,7 +62,7 @@ var paths = {
     dest:'build/assets/fonts',
   },
   scripts: {
-    all:['public/components/**/*.js', 'public/pages/**/*.js', 'public/general/scripts/**.js',],
+    all:['public/components/**/*.js', 'public/pages/**/*.js', 'public/general/scripts/**.js','public/general/scripts/**/*.js'],
     general: 'public/general/scripts/',
     index: 'public/' + fileNames.scripts,
     navigator: 'public/general/scripts/navigator.js',
