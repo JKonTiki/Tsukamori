@@ -5,3 +5,7 @@ var boardInteractive = require('./../../components/board-interactive/board-inter
 exports.mount = function(){
   boardInteractive.mount();
 };
+
+exports.unmount = function(){
+  boardInteractive.unmount();
+}

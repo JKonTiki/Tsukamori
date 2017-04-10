@@ -46,13 +46,17 @@
       let pageClasses = page.classList.value.split(' ');
       if (!pageClasses.includes('hidden')) {
         // if it exists, this is a good place to fire a page.js.unmount()
+        let pageJs = pages[_pageKey].js;
+        if (pageJs.unmount) {
+          pageJs.unmount();
+        }
         page.classList.add('hidden');
       }
     }
     if (!activePage) {
       // if no page exists for that hash, show error page
-      activePage = document.querySelector(`#${pages.error.divId}`);
-      pageKey = 'error';
+      activePage = document.querySelector(`#${pages.home.divId}`);
+      pageKey = 'home';
     }
     // show hash's page if it not already shown
     let activePageClasses = activePage.classList.value.split(' ');
