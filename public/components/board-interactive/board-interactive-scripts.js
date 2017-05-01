@@ -1,14 +1,15 @@
 /* jshint esversion: 6 */
 
-var Helpers = require('./../../general/scripts/Helpers/canvas-helpers');
-var synthesis = require('./audio-synthesis');
+var dataParsing = require('./../../general/scripts/canvas-data-parsing');
+var synthesis = require('./../../general/scripts/audio-synthesis');
+var helpers = require('./../../general/scripts/helpers');
 
 exports.mount = function(){
   const BOARD_WIDTH = 3000;
   const BOARD_HEIGHT = 3000;
-  const BRUSH_RADIUS = 20;
-  const COL_COUNT = 20;
-  const ROW_COUNT = 20;
+  const BRUSH_RADIUS = 60;
+  const COL_COUNT = 50;
+  const ROW_COUNT = 50;
   const PXLS_PER_COL = Math.floor(BOARD_WIDTH / COL_COUNT);
   const PXLS_PER_ROW = Math.floor(BOARD_WIDTH / ROW_COUNT);
   // this is the number of pxl rows we checkPt per Row
@@ -23,7 +24,7 @@ exports.mount = function(){
   var mouseHeld = false;
 
   var putPointProxy = function(event){
-    Helpers.putPoint(event, mouseHeld, boardDom, context, BRUSH_RADIUS);
+    dataParsing.putPoint(event, mouseHeld, boardDom, context, BRUSH_RADIUS);
   }
   document.addEventListener('mousemove', putPointProxy);
   var mousedownFunc = function(event){
@@ -39,10 +40,12 @@ exports.mount = function(){
 
   var testButton = document.querySelector('#testButton');
   var testButtonFunc = function(){
-    var parsedData = Helpers.getPxlData(context, BOARD_WIDTH, BOARD_HEIGHT, PXLS_PER_COL, PXLS_PER_ROW, PXL_ROWS_TO_COUNT, ROW_COUNT);
-    Helpers.visualizeMIDI(parsedData, context, BOARD_WIDTH, BOARD_HEIGHT, PXLS_PER_COL, PXLS_PER_ROW, ROW_COUNT);
+    var parsedData = dataParsing.getPxlData(context, BOARD_WIDTH, BOARD_HEIGHT, PXLS_PER_COL, PXLS_PER_ROW, PXL_ROWS_TO_COUNT, COL_COUNT);
+    dataParsing.visualizeMIDI(parsedData, context, BOARD_WIDTH, BOARD_HEIGHT, PXLS_PER_COL, PXLS_PER_ROW);
+    let invertedData = helpers.invertCanvasData(parsedData, ROW_COUNT);
+    synthesis.clearContext();
     synthesis.init(COL_COUNT, ROW_COUNT);
-    synthesis.translateData(COL_COUNT, ROW_COUNT, parsedData);
+    synthesis.translateData(COL_COUNT, ROW_COUNT, invertedData);
   }
   testButton.addEventListener('click', testButtonFunc);
 
