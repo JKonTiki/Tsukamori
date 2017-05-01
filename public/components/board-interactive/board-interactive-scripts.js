@@ -8,8 +8,8 @@ exports.mount = function(){
   const BOARD_WIDTH = 3000;
   const BOARD_HEIGHT = 3000;
   const BRUSH_RADIUS = 60;
-  const COL_COUNT = 50;
-  const ROW_COUNT = 50;
+  const COL_COUNT = 15;
+  const ROW_COUNT = 15;
   const PXLS_PER_COL = Math.floor(BOARD_WIDTH / COL_COUNT);
   const PXLS_PER_ROW = Math.floor(BOARD_WIDTH / ROW_COUNT);
   // this is the number of pxl rows we checkPt per Row
