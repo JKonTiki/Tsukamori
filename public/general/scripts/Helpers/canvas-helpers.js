@@ -15,7 +15,7 @@ exports.putPoint = function(event, _mouseHeld, _boardDom, _context, _radius){
   }
 }
 
-exports.getPxlData = function(_context, _boardWidth, _boardHeight, _pxlsPerCol, _pxlsPerRow, _pxlRowsToCount){
+exports.getPxlData = function(_context, _boardWidth, _boardHeight, _pxlsPerCol, _pxlsPerRow, _pxlRowsToCount, _rowCount){
   if (_pxlsPerCol === 0 || _pxlsPerRow === 0) {
     console.error('Column and Row counts must be smaller than corresponding board dimens');
     return;
@@ -51,35 +51,35 @@ exports.getPxlData = function(_context, _boardWidth, _boardHeight, _pxlsPerCol, 
       currentRow = thisRow;
     }
     // if non-zero value for canvas pixel
-    if (data[i] !== 0) {
+    if (data[i] !== 0 && i < data.length) {
       // we need the index for beginning of our pxlRow, or pxlPositionVert
       var prevPxlsPassed = pxlPositionVert * _boardWidth * 4;
       var thisCol = Math.floor((i - prevPxlsPassed - 3)/(4 * _pxlsPerCol));
-      if (!parsedDataByCol[`col${thisCol}`]) {
-        parsedDataByCol[`col${thisCol}`] = {};
+      if (!parsedDataByCol[`${thisCol}`]) {
+        parsedDataByCol[`${thisCol}`] = {};
       }
-      if (!parsedDataByCol[`col${thisCol}`][currentRow]) {
-        parsedDataByCol[`col${thisCol}`][currentRow] = 1;
+      if (!parsedDataByCol[`${thisCol}`][_rowCount - 1 - currentRow]) {
+        parsedDataByCol[`${thisCol}`][_rowCount - 1 - currentRow] = 1; // we are inverting row number so that y starts from bottom and goes up
       } else {
-        parsedDataByCol[`col${thisCol}`][currentRow]++;
+        parsedDataByCol[`${thisCol}`][_rowCount - 1 - currentRow]++;
       }
       // }
     }
     // skip non-black color values and to next column
     i += (4 * _pxlsPerCol-1);
   }
+  // console.log(data.length, testCount, data.length/testCount);
   return parsedDataByCol;
 }
 
-exports.visualizeMIDI = function(data, _context, _boardWidth, _boardHeight, _pxlsPerCol, _pxlsPerRow){
-  console.log(data);
+exports.visualizeMIDI = function(data, _context, _boardWidth, _boardHeight, _pxlsPerCol, _pxlsPerRow, _rowCount){
   _context.clearRect(0, 0, _boardWidth, _boardHeight);
-  for (var column in data){
-    let colIndex = column.slice(3);
+  for (var colIndex in data){
     let width = _pxlsPerCol;
     let height = _pxlsPerRow;
     let x = colIndex * _pxlsPerCol;
-    for (var rowIndex in data[column]){
+    for (var rowIndex in data[colIndex]){
+      rowIndex = _rowCount - 1 - parseInt(rowIndex); // we are inverting row number so that y starts from bottom and goes up
       let y = rowIndex * _pxlsPerRow;
       // wrap this in if statement if  pxl-hit frequency threshold desired
         _context.fillRect(x, y, width, height);

@@ -1,13 +1,14 @@
 /* jshint esversion: 6 */
 
 var Helpers = require('./../../general/scripts/Helpers/canvas-helpers');
+var synthesis = require('./audio-synthesis');
 
 exports.mount = function(){
-  const BOARD_WIDTH = 2000;
-  const BOARD_HEIGHT = 2000;
+  const BOARD_WIDTH = 3000;
+  const BOARD_HEIGHT = 3000;
   const BRUSH_RADIUS = 20;
-  const COL_COUNT = 50;
-  const ROW_COUNT = 25;
+  const COL_COUNT = 20;
+  const ROW_COUNT = 20;
   const PXLS_PER_COL = Math.floor(BOARD_WIDTH / COL_COUNT);
   const PXLS_PER_ROW = Math.floor(BOARD_WIDTH / ROW_COUNT);
   // this is the number of pxl rows we checkPt per Row
@@ -35,10 +36,13 @@ exports.mount = function(){
     context.beginPath();
   }
   document.addEventListener('mouseup', mouseupFunc);
+
   var testButton = document.querySelector('#testButton');
   var testButtonFunc = function(){
-    var parsedData = Helpers.getPxlData(context, BOARD_WIDTH, BOARD_HEIGHT, PXLS_PER_COL, PXLS_PER_ROW, PXL_ROWS_TO_COUNT);
-    Helpers.visualizeMIDI(parsedData, context, BOARD_WIDTH, BOARD_HEIGHT, PXLS_PER_COL, PXLS_PER_ROW);
+    var parsedData = Helpers.getPxlData(context, BOARD_WIDTH, BOARD_HEIGHT, PXLS_PER_COL, PXLS_PER_ROW, PXL_ROWS_TO_COUNT, ROW_COUNT);
+    Helpers.visualizeMIDI(parsedData, context, BOARD_WIDTH, BOARD_HEIGHT, PXLS_PER_COL, PXLS_PER_ROW, ROW_COUNT);
+    synthesis.init(COL_COUNT, ROW_COUNT);
+    synthesis.translateData(COL_COUNT, ROW_COUNT, parsedData);
   }
   testButton.addEventListener('click', testButtonFunc);
 
