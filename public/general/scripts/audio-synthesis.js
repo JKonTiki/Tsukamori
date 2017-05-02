@@ -1,13 +1,34 @@
 var errors = require('./../../general/scripts/errors');
 
 const TOTAL_DURATION = 10;
-const FREQ_MIN = 30;
-const FREQ_MAX = 800;
+const BASE_FREQ = 440;
+const SCALE_KEY = 'ionian';
+
 
 var audioContext = null;
 var synths = null;
-var freqInterval = null;
 var timeInterval = null;
+var scales = {
+  ionian: {
+    steps: [2, 2, 1, 2, 2, 2, 1],
+    cumulative: null,
+  },
+  aeolian: {
+    steps: [2, 1, 2, 2, 1, 2, 2],
+    cumulative: null,
+  },
+}
+
+for (let scaleKey in scales){
+  let scale = scales[scaleKey];
+  let cumSteps = [0];
+  let cumSum = 0;
+  for (var i = 0; i < scale.steps.length; i++) {
+    cumSum += scale.steps[i];
+    cumSteps.push(cumSum);
+  }
+  scales[scaleKey].cumulative = cumSteps
+}
 
 exports.init = function(colNum, rowNum){
   // define our audio context
@@ -18,10 +39,6 @@ exports.init = function(colNum, rowNum){
     }
     if (!timeInterval) {
       timeInterval = (TOTAL_DURATION / colNum);
-    }
-    if (!freqInterval) {
-      freqInterval = (FREQ_MAX - FREQ_MIN) / rowNum;
-      // ^^the actual freqeuncies that we want aren't linear, this is just a test setup
     }
   } catch (e) {
     console.warn(e);
@@ -59,7 +76,7 @@ exports.translateData = function(colNum, rowNum, data){
       if (!alreadyPlaying) {
         synths[rowKey].gain.gain.setValueAtTime(.001, now + (colKey * timeInterval));
         // attack
-        synths[rowKey].gain.gain.exponentialRampToValueAtTime(.2, now + (colKey * timeInterval) + timeInterval * .3);
+        synths[rowKey].gain.gain.exponentialRampToValueAtTime(.1, now + (colKey * timeInterval) + timeInterval * .3);
         synths[rowKey].oscillator.start(now + (colKey * timeInterval));
         synthsPlaying[rowKey] = synths[rowKey];
       }
@@ -97,13 +114,13 @@ var setSynths = function(rowNum, usedRows, synthsPlaying){
   let synths = synthsPlaying || {};
   for (var i = 0; i < rowNum; i++) {
     if (usedRows.includes(i) && !synthsPlaying[i]) {
-      let frequency = parseFloat(FREQ_MIN + (freqInterval * i)).toFixed(3);
+      let frequency = getFreqOnKey(i, rowNum);
       //create synth's gain
       let gain = audioContext.createGain();
       gain.connect(audioContext.destination);
       //create synth's oscillator
       let oscillator = audioContext.createOscillator();
-      oscillator.type = 'sawtooth';
+      oscillator.type = 'sine';
       oscillator.frequency.value = frequency;
       oscillator.connect(gain);
       // set to synth object
@@ -113,4 +130,25 @@ var setSynths = function(rowNum, usedRows, synthsPlaying){
     }
   }
   return synths;
+}
+
+var getFreqOnKey = function(index, rowNum){
+  let centerRow = Math.round(rowNum/2);
+  index -= centerRow;
+  let intervals = scales[SCALE_KEY].cumulative;
+  let octave = 0;
+  let degree = 1;
+  let semitones = 0;
+  if (index < 0) {
+    octave = Math.ceil(index / 7);
+    degree = 7 + 1 - Math.abs(index % 7);
+    semitones = (octave * 12) - intervals[degree - 1];
+  } else {
+    octave = Math.floor(index / 7);
+    degree = index % 7 + 1;
+    semitones = (octave * 12) + intervals[degree - 1];
+  }
+  // console.log('index', index, 'octave', octave, 'degree', degree, 'semitones', semitones);
+  let frequency = Math.pow(Math.pow(2, 1/12), semitones) * BASE_FREQ;
+  return frequency;
 }
