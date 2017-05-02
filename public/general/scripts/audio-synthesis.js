@@ -1,44 +1,27 @@
 var errors = require('./../../general/scripts/errors');
 
 const TOTAL_DURATION = 10;
-const BASE_FREQ = 261;
-const SCALE_KEY = 'aeolian';
-const PEAK_GAIN = .02;
+const BASE_FREQ = 65;
+const SCALE_KEY = 'triadMaj';
+const PEAK_GAIN = .01;
 const MIN_GAIN = .0001;
 
 
 var audioContext = null;
+var lowpassFilter = null;
+var highShelfFilter = null;
 var synths = null;
 var timeInterval = null;
 var scales = {
-  ionian: {
-    steps: [2, 2, 1, 2, 2, 2, 1],
-    cumulative: null,
-    revCumulative: null,
-  },
-  aeolian: {
-    steps: [2, 1, 2, 2, 1, 2, 2],
-    cumulative: null,
-    revCumulative: null,
-  },
-}
-
-for (let scaleKey in scales){
-  let scale = scales[scaleKey];
-  let cumSteps = [0];
-  let cumSum = 0;
-  for (var i = 0; i < scale.steps.length; i++) {
-    cumSum += scale.steps[i];
-    cumSteps.push(cumSum);
-  }
-  let revCumSteps = [0]
-  let revCumSum = 0;
-  for (var i = scale.steps.length - 1; i >= 0; i--) {
-    revCumSum += scale.steps[i];
-    revCumSteps.push(revCumSum);
-  }
-  scales[scaleKey].cumulative = cumSteps;
-  scales[scaleKey].revCumulative = revCumSteps;
+  aeolian: [0, 2, 3, 5, 7, 8, 10],
+  blues: [0, 3, 5, 6, 7, 10],
+  fourths: [0, 4, 8],
+  ionian: [0, 2, 4, 5, 7, 9, 11],
+  gypsyMinor: [0, 2, 3, 6, 7, 8, 11],
+  pentatonic: [0, 2, 4, 7, 9],
+  pentMinor: [0, 3, 5, 7, 10],
+  triadMaj: [0, 5, 7],
+  triadMin: [0, 4, 7],
 }
 
 exports.init = function(colNum, rowNum){
@@ -47,6 +30,20 @@ exports.init = function(colNum, rowNum){
     window.AudioContext = window.AudioContext || window.webkitAudioContext;
     if (!audioContext) {
       audioContext = new AudioContext();
+    }
+    if (!highShelfFilter) {
+      highShelfFilter = audioContext.createBiquadFilter();
+      highShelfFilter.type = "highshelf";
+      highShelfFilter.frequency.value = 400;
+      highShelfFilter.gain.value = 1;
+      highShelfFilter.connect(audioContext.destination);
+    }
+    if (!lowpassFilter) {
+      lowpassFilter = audioContext.createBiquadFilter();
+      lowpassFilter.type = "lowpass";
+      lowpassFilter.frequency.value = 5000;
+      lowpassFilter.gain.value = 2;
+      lowpassFilter.connect(highShelfFilter);
     }
     if (!timeInterval) {
       timeInterval = (TOTAL_DURATION / colNum);
@@ -88,6 +85,7 @@ exports.translateData = function(colNum, rowNum, data){
         let instrument = synths[rowKey];
         instrument.gain.gain.setValueAtTime(MIN_GAIN, now + (colKey * timeInterval));
         instrument.gain.gain.exponentialRampToValueAtTime(PEAK_GAIN, now + (colKey * timeInterval) + timeInterval * instrument.attack);
+        instrument.gain.gain.exponentialRampToValueAtTime(PEAK_GAIN * instrument.sustain, now + (colKey * timeInterval) + timeInterval * instrument.decay);
         synthsPlaying[rowKey] = instrument;
         for (var i = 0; i < instrument.harmonics.length; i++) {
           let harmonic = instrument.harmonics[i];
@@ -113,6 +111,8 @@ exports.clearContext = function(){
   if (audioContext) {
     audioContext.close();
     audioContext = null;
+    lowpassFilter = null;
+    highShelfFilter = null;
   }
 }
 
@@ -130,29 +130,37 @@ var setSynths = function(rowNum, usedRows, synthsPlaying){
   let synths = synthsPlaying || {};
   for (var i = 0; i < rowNum; i++) {
     if (usedRows.includes(i) && !synthsPlaying[i]) {
-      let fundFreq = getFreqOnKey(i, rowNum);
-      synths[i] = new Flute(fundFreq);
+      let fundFreq = getFrequency(i, rowNum);
+      synths[i] = new Flute(fundFreq, BASE_FREQ);
     }
   }
   return synths;
 }
 
-function Flute(fundFreq){
+function Flute(fundFreq, baseFreq){
   this.harmonics = [];
   this.gain = audioContext.createGain();
-  this.gain.connect(audioContext.destination);
+  this.gain.connect(lowpassFilter);
   this.gain.gain.value = MIN_GAIN;
-  // attack and release are pts on line from 0 to 1
+  // attack, decay and release are pts on line from 0 to 1
   this.attack = .1;
-  this.release = .6;
-  this.harmonics.push(new Harmonic(fundFreq, 1, .7, .05, .04, this.gain));
-  this.harmonics.push(new Harmonic(fundFreq, 2, .3, .05, .04, this.gain));
-  this.harmonics.push(new Harmonic(fundFreq, 3, .8, .05, .04, this.gain));
-  this.harmonics.push(new Harmonic(fundFreq, 4, .6, .05, .04, this.gain));
-  this.harmonics.push(new Harmonic(fundFreq, 5, .8, .05, .04, this.gain));
-  this.harmonics.push(new Harmonic(fundFreq, 6, .1, .05, .04, this.gain));
-  this.harmonics.push(new Harmonic(fundFreq, 7, .2, .05, .04, this.gain));
-  this.harmonics.push(new Harmonic(fundFreq, 8, .1, .05, .04, this.gain));
+  this.decay = .3;
+  this.release = .8;
+  // sustain is percentage of peak gain we sustain at
+  this.sustain = .4;
+  // these are our harmonics
+  this.harmonics.push(new Harmonic(fundFreq, 1, .7 * (fundFreq / baseFreq * 4), .05, .04, this.gain));
+  this.harmonics.push(new Harmonic(fundFreq, 2, .3 * (fundFreq / baseFreq * 4), .05, .04, this.gain));
+  this.harmonics.push(new Harmonic(fundFreq, 3, 1 * (fundFreq / baseFreq * 4), .05, .04, this.gain));
+  this.harmonics.push(new Harmonic(fundFreq, 4, .6 * (fundFreq / baseFreq * 4), .05, .04, this.gain));
+  this.harmonics.push(new Harmonic(fundFreq, 5, .8 * (fundFreq / baseFreq * 4), .05, .04, this.gain));
+  this.harmonics.push(new Harmonic(fundFreq, 6, .5 * (fundFreq / baseFreq * 4), .05, .04, this.gain));
+  this.harmonics.push(new Harmonic(fundFreq, 7, .3 * (fundFreq / baseFreq * 4), .05, .04, this.gain));
+  // a little dissonance is always healthy
+  this.harmonics.push(new Harmonic(fundFreq + fundFreq * .01, 1, .7 * (fundFreq / baseFreq * 4), .05, .04, this.gain));
+  this.harmonics.push(new Harmonic(fundFreq + fundFreq * .01, 2, .7 * (fundFreq / baseFreq * 4), .05, .04, this.gain));
+  this.harmonics.push(new Harmonic(fundFreq + fundFreq * .01, 3, .7 * (fundFreq / baseFreq * 4), .05, .04, this.gain));
+  this.harmonics.push(new Harmonic(fundFreq + fundFreq * .01, 4, .7 * (fundFreq / baseFreq * 4), .05, .04, this.gain));
 }
 
 function Harmonic(fundFreq, number, gainRatio, modRange, gainRange, instrumentGain) {
@@ -169,29 +177,14 @@ function Harmonic(fundFreq, number, gainRatio, modRange, gainRange, instrumentGa
   this.gain.connect(instrumentGain);
 }
 
-var getFreqOnKey = function(index, rowNum){
-  let centerRow = Math.round(rowNum/2);
-  index -= centerRow;
-  let octave = 0;
-  let degree = 1;
-  let semitones = 0;
-  if (index < 0) {
-    var intervals = scales[SCALE_KEY].revCumulative;
-    octave = Math.ceil(index / 7);
-    degree = 7 + 1 - Math.abs(index % 7);
-    semitones = (octave * 12) - intervals[intervals.length - degree];
-    if (degree === 8) {
-      degree = 1;
-    }
-  } else {
-    var intervals = scales[SCALE_KEY].cumulative;
-    octave = Math.floor(index / 7);
-    degree = index % 7 + 1;
-    semitones = (octave * 12) + intervals[degree - 1];
-  }
+var getFrequency = function(index, rowNum){
+  let intervals = scales[SCALE_KEY];
+  let octave = Math.floor(index / (intervals.length));
+  let degree = (index % intervals.length) + 1;
+  let semitones = (octave * 12) + intervals[degree - 1];
   // console.log('index', index, 'octave', octave, 'degree', degree, 'semitones', semitones);
   let frequency = Math.pow(Math.pow(2, 1/12), semitones) * BASE_FREQ;
   return frequency;
 }
 
-exports.getFrequency = getFreqOnKey;
+exports.getFrequency = getFrequency;
