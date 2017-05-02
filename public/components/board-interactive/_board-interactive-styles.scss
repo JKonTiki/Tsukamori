@@ -1,15 +1,24 @@
 // use this wrapper to preserve scope!
 .component-board-interactive {
   #board-interactive {
-    border: 1em $color-accent solid;
+    z-index: 1;
     background-color: $color-primary;
-    padding-top: 30;
+    border: 1em $color-accent solid;
   }
   #testButton {
     color: $color-accent;
   }
   #board-wrapper{
     position: relative;
+    padding: -5px;
+  }
+  #board-backdrop{
+    background-color: none;
+    position: absolute;
+    top: 0;
+    z-index: 0;
+    pointer-events: none;
+    border: 1em $color-accent solid;
   }
   .frequency-label {
     color: $color-white;

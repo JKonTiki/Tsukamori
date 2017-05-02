@@ -2,7 +2,7 @@ var errors = require('./../../general/scripts/errors');
 
 const TOTAL_DURATION = 10;
 const BASE_FREQ = 440;
-const SCALE_KEY = 'ionian';
+const SCALE_KEY = 'aeolian';
 
 
 var audioContext = null;
@@ -83,6 +83,9 @@ exports.translateData = function(colNum, rowNum, data){
         }
       }
       if (!alreadyPlaying) {
+        if (colKey < 0) {
+          console.log(colKey, data);
+        }
         synths[rowKey].gain.gain.setValueAtTime(.001, now + (colKey * timeInterval));
         // attack
         synths[rowKey].gain.gain.exponentialRampToValueAtTime(.1, now + (colKey * timeInterval) + timeInterval * .3);

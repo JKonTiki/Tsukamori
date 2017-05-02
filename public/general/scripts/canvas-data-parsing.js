@@ -55,7 +55,7 @@ exports.getPxlData = function(_context, _boardWidth, _boardHeight, _pxlsPerCol, 
       // we need the index for beginning of our pxlRow, or pxlPositionVert
       var prevPxlsPassed = pxlPositionVert * _boardWidth * 4;
       var thisCol = Math.floor((i - prevPxlsPassed - 3)/(4 * _pxlsPerCol));
-      if (thisCol <= _colCount) {
+      if (thisCol <= _colCount && (thisCol >= 0 || thisCol <= COL_COUNT)) {
         if (!parsedDataByCol[`${thisCol}`]) {
           parsedDataByCol[`${thisCol}`] = {};
         }
@@ -90,9 +90,9 @@ exports.visualizeMIDI = function(data, _context, _boardWidth, _boardHeight, _pxl
 
 exports.drawGridlines = function(_context, _boardWidth, _boardHeight, _pxlsPerCol, _pxlsPerRow, _colNum, _rowNum){
   for (var i = 0; i < _rowNum; i++) {
-    _context.fillRect(0, _pxlsPerRow * i + 1, _boardWidth, 2);
+    _context.fillRect(0, _pxlsPerRow * i, _boardWidth, 3);
   }
   for (var i = 0; i < _colNum; i++) {
-    _context.fillRect(_pxlsPerCol * i + 1, 0, 2, _boardHeight);
+    _context.fillRect(_pxlsPerCol * i, 0, 3, _boardHeight);
   }
 }
