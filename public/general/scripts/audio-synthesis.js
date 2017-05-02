@@ -83,21 +83,26 @@ exports.translateData = function(colNum, rowNum, data){
         }
       }
       if (!alreadyPlaying) {
-        if (colKey < 0) {
-          console.log(colKey, data);
+        let instrument = synths[rowKey];
+        for (var i = 0; i < instrument.harmonics.length; i++) {
+          let harmonic = instrument.harmonics[i];
+          harmonic.gain.gain.setValueAtTime(.001 * harmonic.gainRatio, now + (colKey * timeInterval));
+          // attack
+          harmonic.gain.gain.exponentialRampToValueAtTime(.2 * harmonic.gainRatio, now + (colKey * timeInterval) + timeInterval * .3);
+          harmonic.oscillator.start(now + (colKey * timeInterval));
         }
-        synths[rowKey].gain.gain.setValueAtTime(.001, now + (colKey * timeInterval));
-        // attack
-        synths[rowKey].gain.gain.exponentialRampToValueAtTime(.1, now + (colKey * timeInterval) + timeInterval * .3);
-        synths[rowKey].oscillator.start(now + (colKey * timeInterval));
-        synthsPlaying[rowKey] = synths[rowKey];
+        synthsPlaying[rowKey] = instrument;
       }
       if (!continuesPlaying) {
-        // sustain
-        synths[rowKey].gain.gain.exponentialRampToValueAtTime(.1, now + (colKey * timeInterval) + timeInterval * .6);
-        // release
-        synths[rowKey].gain.gain.exponentialRampToValueAtTime(.001, now + (colKey * timeInterval) + timeInterval);
-        synths[rowKey].oscillator.stop(now + (colKey * timeInterval) + timeInterval);
+        let instrument = synths[rowKey];
+        for (var i = 0; i < instrument.harmonics.length; i++) {
+          let harmonic = instrument.harmonics[i];
+          // sustain
+          harmonic.gain.gain.exponentialRampToValueAtTime(.2 * harmonic.gainRatio, now + (colKey * timeInterval) + timeInterval * .6);
+          // release
+          harmonic.gain.gain.exponentialRampToValueAtTime(.001 * harmonic.gainRatio, now + (colKey * timeInterval) + timeInterval);
+          harmonic.oscillator.stop(now + (colKey * timeInterval) + timeInterval);
+        }
         synthsPlaying[rowKey] = false;
       }
     }
@@ -126,22 +131,34 @@ var setSynths = function(rowNum, usedRows, synthsPlaying){
   let synths = synthsPlaying || {};
   for (var i = 0; i < rowNum; i++) {
     if (usedRows.includes(i) && !synthsPlaying[i]) {
-      let frequency = getFreqOnKey(i, rowNum);
-      //create synth's gain
-      let gain = audioContext.createGain();
-      gain.connect(audioContext.destination);
-      //create synth's oscillator
-      let oscillator = audioContext.createOscillator();
-      oscillator.type = 'sine';
-      oscillator.frequency.value = frequency;
-      oscillator.connect(gain);
-      // set to synth object
-      synths[i] = {};
-      synths[i]['oscillator'] = oscillator;
-      synths[i]['gain'] = gain;
+      let fundFreq = getFreqOnKey(i, rowNum);
+      synths[i] = new Flute(fundFreq);
     }
   }
   return synths;
+}
+
+function Flute(fundFreq){
+  this.harmonics = [];
+  this.harmonics.push(new Harmonic(fundFreq, 1, .03, .05, .04));
+  this.harmonics.push(new Harmonic(fundFreq, 2, .4, .05, .04));
+  this.harmonics.push(new Harmonic(fundFreq, 3, 1, .05, .04));
+  this.harmonics.push(new Harmonic(fundFreq, 4, .6, .05, .04));
+  this.harmonics.push(new Harmonic(fundFreq, 5, .3, .05, .04));
+  this.harmonics.push(new Harmonic(fundFreq, 6, .1, .05, .04));
+}
+
+function Harmonic(fundFreq, number, gainRatio, modRange, gainRange) {
+  this.frequency = fundFreq * number;
+  this.gainRatio = gainRatio;
+  this.modRange = this.frequency * modRange;
+  this.gainRange = gainRange;
+  this.gain = audioContext.createGain();
+  this.gain.connect(audioContext.destination);
+  this.oscillator = audioContext.createOscillator();
+  this.oscillator.type = 'sine';
+  this.oscillator.frequency.value = this.frequency;
+  this.oscillator.connect(this.gain);
 }
 
 var getFreqOnKey = function(index, rowNum){
