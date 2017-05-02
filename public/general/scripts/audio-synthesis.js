@@ -1,8 +1,10 @@
 var errors = require('./../../general/scripts/errors');
 
 const TOTAL_DURATION = 10;
-const BASE_FREQ = 440;
+const BASE_FREQ = 261;
 const SCALE_KEY = 'aeolian';
+const PEAK_GAIN = .02;
+const MIN_GAIN = .0001;
 
 
 var audioContext = null;
@@ -84,23 +86,20 @@ exports.translateData = function(colNum, rowNum, data){
       }
       if (!alreadyPlaying) {
         let instrument = synths[rowKey];
+        instrument.gain.gain.setValueAtTime(MIN_GAIN, now + (colKey * timeInterval));
+        instrument.gain.gain.exponentialRampToValueAtTime(PEAK_GAIN, now + (colKey * timeInterval) + timeInterval * instrument.attack);
+        synthsPlaying[rowKey] = instrument;
         for (var i = 0; i < instrument.harmonics.length; i++) {
           let harmonic = instrument.harmonics[i];
-          harmonic.gain.gain.setValueAtTime(.001 * harmonic.gainRatio, now + (colKey * timeInterval));
-          // attack
-          harmonic.gain.gain.exponentialRampToValueAtTime(.2 * harmonic.gainRatio, now + (colKey * timeInterval) + timeInterval * .3);
           harmonic.oscillator.start(now + (colKey * timeInterval));
         }
-        synthsPlaying[rowKey] = instrument;
       }
       if (!continuesPlaying) {
         let instrument = synths[rowKey];
+        instrument.gain.gain.exponentialRampToValueAtTime(PEAK_GAIN, now + (colKey * timeInterval) + timeInterval * instrument.release);
+        instrument.gain.gain.exponentialRampToValueAtTime(MIN_GAIN, now + (colKey * timeInterval) + timeInterval);
         for (var i = 0; i < instrument.harmonics.length; i++) {
           let harmonic = instrument.harmonics[i];
-          // sustain
-          harmonic.gain.gain.exponentialRampToValueAtTime(.2 * harmonic.gainRatio, now + (colKey * timeInterval) + timeInterval * .6);
-          // release
-          harmonic.gain.gain.exponentialRampToValueAtTime(.001 * harmonic.gainRatio, now + (colKey * timeInterval) + timeInterval);
           harmonic.oscillator.stop(now + (colKey * timeInterval) + timeInterval);
         }
         synthsPlaying[rowKey] = false;
@@ -140,25 +139,34 @@ var setSynths = function(rowNum, usedRows, synthsPlaying){
 
 function Flute(fundFreq){
   this.harmonics = [];
-  this.harmonics.push(new Harmonic(fundFreq, 1, .03, .05, .04));
-  this.harmonics.push(new Harmonic(fundFreq, 2, .4, .05, .04));
-  this.harmonics.push(new Harmonic(fundFreq, 3, 1, .05, .04));
-  this.harmonics.push(new Harmonic(fundFreq, 4, .6, .05, .04));
-  this.harmonics.push(new Harmonic(fundFreq, 5, .3, .05, .04));
-  this.harmonics.push(new Harmonic(fundFreq, 6, .1, .05, .04));
+  this.gain = audioContext.createGain();
+  this.gain.connect(audioContext.destination);
+  this.gain.gain.value = MIN_GAIN;
+  // attack and release are pts on line from 0 to 1
+  this.attack = .1;
+  this.release = .6;
+  this.harmonics.push(new Harmonic(fundFreq, 1, .7, .05, .04, this.gain));
+  this.harmonics.push(new Harmonic(fundFreq, 2, .3, .05, .04, this.gain));
+  this.harmonics.push(new Harmonic(fundFreq, 3, .8, .05, .04, this.gain));
+  this.harmonics.push(new Harmonic(fundFreq, 4, .6, .05, .04, this.gain));
+  this.harmonics.push(new Harmonic(fundFreq, 5, .8, .05, .04, this.gain));
+  this.harmonics.push(new Harmonic(fundFreq, 6, .1, .05, .04, this.gain));
+  this.harmonics.push(new Harmonic(fundFreq, 7, .2, .05, .04, this.gain));
+  this.harmonics.push(new Harmonic(fundFreq, 8, .1, .05, .04, this.gain));
 }
 
-function Harmonic(fundFreq, number, gainRatio, modRange, gainRange) {
+function Harmonic(fundFreq, number, gainRatio, modRange, gainRange, instrumentGain) {
   this.frequency = fundFreq * number;
   this.gainRatio = gainRatio;
   this.modRange = this.frequency * modRange;
   this.gainRange = gainRange;
   this.gain = audioContext.createGain();
-  this.gain.connect(audioContext.destination);
+  this.gain.gain.value = this.gainRatio;
   this.oscillator = audioContext.createOscillator();
   this.oscillator.type = 'sine';
   this.oscillator.frequency.value = this.frequency;
   this.oscillator.connect(this.gain);
+  this.gain.connect(instrumentGain);
 }
 
 var getFreqOnKey = function(index, rowNum){
