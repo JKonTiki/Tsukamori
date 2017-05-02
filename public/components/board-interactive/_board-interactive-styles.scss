@@ -3,5 +3,18 @@
   #board-interactive {
     border: 1em $color-accent solid;
     background-color: $color-primary;
+    padding-top: 30;
+  }
+  #testButton {
+    color: $color-accent;
+  }
+  #board-wrapper{
+    position: relative;
+  }
+  .frequency-label {
+    color: $color-white;
+    position: absolute;
+    left:  -5em;
+    top: 0em;
   }
 }

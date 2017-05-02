@@ -12,10 +12,12 @@ var scales = {
   ionian: {
     steps: [2, 2, 1, 2, 2, 2, 1],
     cumulative: null,
+    revCumulative: null,
   },
   aeolian: {
     steps: [2, 1, 2, 2, 1, 2, 2],
     cumulative: null,
+    revCumulative: null,
   },
 }
 
@@ -27,7 +29,14 @@ for (let scaleKey in scales){
     cumSum += scale.steps[i];
     cumSteps.push(cumSum);
   }
-  scales[scaleKey].cumulative = cumSteps
+  let revCumSteps = [0]
+  let revCumSum = 0;
+  for (var i = scale.steps.length - 1; i >= 0; i--) {
+    revCumSum += scale.steps[i];
+    revCumSteps.push(revCumSum);
+  }
+  scales[scaleKey].cumulative = cumSteps;
+  scales[scaleKey].revCumulative = revCumSteps;
 }
 
 exports.init = function(colNum, rowNum){
@@ -135,15 +144,19 @@ var setSynths = function(rowNum, usedRows, synthsPlaying){
 var getFreqOnKey = function(index, rowNum){
   let centerRow = Math.round(rowNum/2);
   index -= centerRow;
-  let intervals = scales[SCALE_KEY].cumulative;
   let octave = 0;
   let degree = 1;
   let semitones = 0;
   if (index < 0) {
+    var intervals = scales[SCALE_KEY].revCumulative;
     octave = Math.ceil(index / 7);
     degree = 7 + 1 - Math.abs(index % 7);
-    semitones = (octave * 12) - intervals[degree - 1];
+    semitones = (octave * 12) - intervals[intervals.length - degree];
+    if (degree === 8) {
+      degree = 1;
+    }
   } else {
+    var intervals = scales[SCALE_KEY].cumulative;
     octave = Math.floor(index / 7);
     degree = index % 7 + 1;
     semitones = (octave * 12) + intervals[degree - 1];
@@ -152,3 +165,5 @@ var getFreqOnKey = function(index, rowNum){
   let frequency = Math.pow(Math.pow(2, 1/12), semitones) * BASE_FREQ;
   return frequency;
 }
+
+exports.getFrequency = getFreqOnKey;
