@@ -16,7 +16,6 @@ exports.putPoint = function(event, _mouseHeld, _boardDom, _context, _radius){
 }
 
 exports.getPxlData = function(_context, _boardWidth, _boardHeight, _pxlsPerCol, _pxlsPerRow, _pxlRowsToCount, _colCount){
-  console.log(_colCount);
   if (_pxlsPerCol === 0 || _pxlsPerRow === 0) {
     console.error('Column and Row counts must be smaller than corresponding board dimens');
     return;
@@ -56,7 +55,7 @@ exports.getPxlData = function(_context, _boardWidth, _boardHeight, _pxlsPerCol, 
       // we need the index for beginning of our pxlRow, or pxlPositionVert
       var prevPxlsPassed = pxlPositionVert * _boardWidth * 4;
       var thisCol = Math.floor((i - prevPxlsPassed - 3)/(4 * _pxlsPerCol));
-      if (thisCol <= _colCount && (thisCol >= 0 || thisCol <= _colCount)) {
+      if (thisCol <= _colCount && (thisCol >= 0 && thisCol <= _colCount)) {
         if (!parsedDataByCol[`${thisCol}`]) {
           parsedDataByCol[`${thisCol}`] = {};
         }

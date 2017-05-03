@@ -1,10 +1,10 @@
 var errors = require('./../../general/scripts/errors');
 
-const TOTAL_DURATION = 10;
-const BASE_FREQ = 65;
-const SCALE_KEY = 'triadMaj';
-const PEAK_GAIN = .01;
-const MIN_GAIN = .0001;
+const TOTAL_DURATION = 15;
+const BASE_FREQ = 260;
+const SCALE_KEY = 'pentMinor';
+const PEAK_GAIN = .002;
+const MIN_GAIN = .000001;
 
 
 var audioContext = null;
@@ -31,19 +31,19 @@ exports.init = function(colNum, rowNum){
     if (!audioContext) {
       audioContext = new AudioContext();
     }
-    if (!highShelfFilter) {
-      highShelfFilter = audioContext.createBiquadFilter();
-      highShelfFilter.type = "highshelf";
-      highShelfFilter.frequency.value = 400;
-      highShelfFilter.gain.value = 1;
-      highShelfFilter.connect(audioContext.destination);
-    }
+    // if (!highShelfFilter) {
+    //   highShelfFilter = audioContext.createBiquadFilter();
+    //   highShelfFilter.type = "highpass";
+    //   highShelfFilter.frequency.value = 6000;
+    //   highShelfFilter.gain.value = .5;
+    //   highShelfFilter.connect(audioContext.destination);
+    // }
     if (!lowpassFilter) {
       lowpassFilter = audioContext.createBiquadFilter();
       lowpassFilter.type = "lowpass";
-      lowpassFilter.frequency.value = 5000;
-      lowpassFilter.gain.value = 2;
-      lowpassFilter.connect(highShelfFilter);
+      lowpassFilter.frequency.value = 7000;
+      lowpassFilter.gain.value = .5;
+      lowpassFilter.connect(audioContext.destination);
     }
     if (!timeInterval) {
       timeInterval = (TOTAL_DURATION / colNum);
@@ -67,10 +67,12 @@ exports.translateData = function(colNum, rowNum, data){
     colKey = parseInt(colKey);
     // reset synths to play again on next column
     synths = setSynths(rowNum, usedRows, synthsPlaying);
+    let starting = [];
+    let stopping = [];
     for (let rowKey in data[colKey]){
-      rowKey = parseInt(rowKey);
       let alreadyPlaying = false;
       let continuesPlaying = false;
+      rowKey = parseInt(rowKey);
       if (data[colKey - 1]) {
         if (data[colKey - 1][rowKey]) {
           alreadyPlaying = true;
@@ -81,8 +83,42 @@ exports.translateData = function(colNum, rowNum, data){
           continuesPlaying = true;
         }
       }
-      if (!alreadyPlaying) {
+      if (!continuesPlaying) {
+        stopping.push(rowKey);
+      }
+      if (!alreadyPlaying){
+        starting.push(rowKey);
+      }
+    }
+    for (let rowKey in data[colKey]){
+      rowKey = parseInt(rowKey);
+      if (starting.includes(rowKey)) {
+        // if (stopping.length > 0) {
+        //   let stoppingIndex = stopping[0];
+        //   // console.log('starting', starting);
+        //   // console.log('stoppingIndex', stoppingIndex);
+        //   // take index of synth that is stopping
+        //   let oldInstrument = synths[stoppingIndex];
+        //   // console.log(synths, stoppingIndex);
+        //   let newInstrument = synths[rowKey];
+        //   // ramp up each harmonic frequency from oldInstrument to newInstrument
+        //   for (var i = 0; i < oldInstrument.harmonics.length; i++) {
+        //     let harmonic = oldInstrument.harmonics[i];
+        //     harmonic.oscillator.frequency.exponentialRampToValueAtTime(newInstrument.harmonics[i].frequency, now + (colKey * timeInterval));
+        //   }
+        //   // console.log('stopping', stoppingIndex);
+        //   // kill the old synths spot
+        //   synthsPlaying[stoppingIndex] = false;
+        //   lastTransitionedSynth = stoppingIndex;
+        //   justTransitionedSynth = true;
+        //   stopping.splice(0, 1);
+        //   // our old synth will now occupy new synth's spot
+        //   synthsPlaying[rowKey] = oldInstrument;
+        //   synths[rowKey] = oldInstrument;
+        // }
+        // if (!justTransitionedSynth){
         let instrument = synths[rowKey];
+        // console.log('instrument starting old fashioned way at row', rowKey, instrument);
         instrument.gain.gain.setValueAtTime(MIN_GAIN, now + (colKey * timeInterval));
         instrument.gain.gain.exponentialRampToValueAtTime(PEAK_GAIN, now + (colKey * timeInterval) + timeInterval * instrument.attack);
         instrument.gain.gain.exponentialRampToValueAtTime(PEAK_GAIN * instrument.sustain, now + (colKey * timeInterval) + timeInterval * instrument.decay);
@@ -91,8 +127,13 @@ exports.translateData = function(colNum, rowNum, data){
           let harmonic = instrument.harmonics[i];
           harmonic.oscillator.start(now + (colKey * timeInterval));
         }
+        // }
+        // remove from things that are starting list
+        starting.splice(starting.indexOf(rowKey), 1);
       }
-      if (!continuesPlaying) {
+      // if it was transitioned then we dont want to stop again
+      if (stopping.includes(rowKey)) {
+        // console.log('stopping the old fashioned way', rowKey);
         let instrument = synths[rowKey];
         instrument.gain.gain.exponentialRampToValueAtTime(PEAK_GAIN, now + (colKey * timeInterval) + timeInterval * instrument.release);
         instrument.gain.gain.exponentialRampToValueAtTime(MIN_GAIN, now + (colKey * timeInterval) + timeInterval);
@@ -117,6 +158,7 @@ exports.clearContext = function(){
 }
 
 var getUsedRows = function(data){
+  // we only need to set oscillators for rows being employed
   let usedRows = [];
   for (let colKey in data){
     for (let rowKey in data[colKey]){
@@ -132,6 +174,7 @@ var setSynths = function(rowNum, usedRows, synthsPlaying){
     if (usedRows.includes(i) && !synthsPlaying[i]) {
       let fundFreq = getFrequency(i, rowNum);
       synths[i] = new Flute(fundFreq, BASE_FREQ);
+      // console.log('resetting synth at ', i);
     }
   }
   return synths;
@@ -147,20 +190,20 @@ function Flute(fundFreq, baseFreq){
   this.decay = .3;
   this.release = .8;
   // sustain is percentage of peak gain we sustain at
-  this.sustain = .4;
+  this.sustain = .3;
   // these are our harmonics
-  this.harmonics.push(new Harmonic(fundFreq, 1, .7 * (fundFreq / baseFreq * 4), .05, .04, this.gain));
-  this.harmonics.push(new Harmonic(fundFreq, 2, .3 * (fundFreq / baseFreq * 4), .05, .04, this.gain));
-  this.harmonics.push(new Harmonic(fundFreq, 3, 1 * (fundFreq / baseFreq * 4), .05, .04, this.gain));
-  this.harmonics.push(new Harmonic(fundFreq, 4, .6 * (fundFreq / baseFreq * 4), .05, .04, this.gain));
-  this.harmonics.push(new Harmonic(fundFreq, 5, .8 * (fundFreq / baseFreq * 4), .05, .04, this.gain));
-  this.harmonics.push(new Harmonic(fundFreq, 6, .5 * (fundFreq / baseFreq * 4), .05, .04, this.gain));
-  this.harmonics.push(new Harmonic(fundFreq, 7, .3 * (fundFreq / baseFreq * 4), .05, .04, this.gain));
+  this.harmonics.push(new Harmonic(fundFreq, 1, .7 * (fundFreq / baseFreq), .05, .04, this.gain));
+  this.harmonics.push(new Harmonic(fundFreq, 2, .3 * (fundFreq / baseFreq), .05, .04, this.gain));
+  this.harmonics.push(new Harmonic(fundFreq, 3,  1 * (fundFreq / baseFreq), .05, .04, this.gain));
+  this.harmonics.push(new Harmonic(fundFreq, 4, .6 * (fundFreq / baseFreq), .05, .04, this.gain));
+  this.harmonics.push(new Harmonic(fundFreq, 5, .8 / (fundFreq / baseFreq), .05, .04, this.gain));
+  this.harmonics.push(new Harmonic(fundFreq, 6, .5 / (fundFreq / baseFreq), .05, .04, this.gain));
+  this.harmonics.push(new Harmonic(fundFreq, 7, .3 / (fundFreq / baseFreq), .05, .04, this.gain));
   // a little dissonance is always healthy
-  this.harmonics.push(new Harmonic(fundFreq + fundFreq * .01, 1, .7 * (fundFreq / baseFreq * 4), .05, .04, this.gain));
-  this.harmonics.push(new Harmonic(fundFreq + fundFreq * .01, 2, .7 * (fundFreq / baseFreq * 4), .05, .04, this.gain));
-  this.harmonics.push(new Harmonic(fundFreq + fundFreq * .01, 3, .7 * (fundFreq / baseFreq * 4), .05, .04, this.gain));
-  this.harmonics.push(new Harmonic(fundFreq + fundFreq * .01, 4, .7 * (fundFreq / baseFreq * 4), .05, .04, this.gain));
+  this.harmonics.push(new Harmonic(fundFreq + fundFreq * .01, 1, .3 * (fundFreq / baseFreq), .05, .04, this.gain));
+  this.harmonics.push(new Harmonic(fundFreq + fundFreq * .01, 2, .3 * (fundFreq / baseFreq), .05, .04, this.gain));
+  this.harmonics.push(new Harmonic(fundFreq + fundFreq * .01, 3, .3 / (fundFreq / baseFreq), .05, .04, this.gain));
+  this.harmonics.push(new Harmonic(fundFreq + fundFreq * .01, 4, .3 / (fundFreq / baseFreq), .05, .04, this.gain));
 }
 
 function Harmonic(fundFreq, number, gainRatio, modRange, gainRange, instrumentGain) {
@@ -171,7 +214,7 @@ function Harmonic(fundFreq, number, gainRatio, modRange, gainRange, instrumentGa
   this.gain = audioContext.createGain();
   this.gain.gain.value = this.gainRatio;
   this.oscillator = audioContext.createOscillator();
-  this.oscillator.type = 'sine';
+  this.oscillator.type = 'triangle';
   this.oscillator.frequency.value = this.frequency;
   this.oscillator.connect(this.gain);
   this.gain.connect(instrumentGain);
