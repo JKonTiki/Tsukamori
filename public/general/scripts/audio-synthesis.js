@@ -1,8 +1,8 @@
 var errors = require('./../../general/scripts/errors');
 
 const TOTAL_DURATION = 15;
-const BASE_FREQ = 260;
-const SCALE_KEY = 'pentMinor';
+const BASE_FREQ = 65;
+const SCALE_KEY = 'pentatonic';
 const PEAK_GAIN = .02;
 const MIN_GAIN = .000001;
 
@@ -160,10 +160,10 @@ function Flute(fundFreq, baseFreq){
   this.gain.gain.value = MIN_GAIN;
   // attack, decay and release are pts on line from 0 to 1
   this.attack = .1;
-  this.decay = .3;
-  this.release = .8;
+  this.decay = .2;
+  this.release = .6;
   // sustain is percentage of peak gain we sustain at
-  this.sustain = .3;
+  this.sustain = .5;
   // these are our harmonics
   this.harmonics.push(new Harmonic(fundFreq, 1, .7 * (fundFreq / baseFreq), this.gain));
   this.harmonics.push(new Harmonic(fundFreq, 2, .3 * (fundFreq / baseFreq), this.gain));
@@ -180,10 +180,24 @@ function Flute(fundFreq, baseFreq){
   // each instrument has its own lfo for vibrato simulation
   this.lfo = {};
   this.lfo.oscillator =  audioContext.createOscillator();
-  this.lfo.oscillator.type = 'sawtooth';
-  this.lfo.oscillator.frequency.value = 10 + (Math.random() * 12 - 6);
+  let wavePts = TOTAL_DURATION * 2 + (TOTAL_DURATION - Math.ceil(Math.random() * TOTAL_DURATION))
+  let real = new Float32Array(wavePts);
+  let imag = new Float32Array(wavePts);
+  for (var i = 0; i < real.length; i++) {
+    real[i] = (real.length - i)/real.length + (1- Math.random())/4;
+    imag[i] = (real.length - i)/real.length + (1- Math.random())/4;
+    if (real[i] > 1) {
+      real[i] = 1
+    }
+    if (imag[i] > 1) {
+      imag[i] = 1
+    }
+  }
+  let wave = audioContext.createPeriodicWave(real, imag, {disableNormalization: true});
+  this.lfo.oscillator.setPeriodicWave(wave);
+  this.lfo.oscillator.frequency.value = 1/(TOTAL_DURATION);
   this.lfo.gain = audioContext.createGain();
-  this.lfo.gain.gain.value = .002;
+  this.lfo.gain.gain.value = .00001;
   this.lfo.oscillator.connect(this.lfo.gain);
   this.lfo.gain.connect(this.gain.gain);
   this.gain.connect(lowpassFilter);
