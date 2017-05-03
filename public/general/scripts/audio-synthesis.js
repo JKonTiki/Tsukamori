@@ -1,18 +1,21 @@
 var errors = require('./../../general/scripts/errors');
+var visualizer = require('./../../components/audio-visualizer/audio-visualizer-scripts');
 
-const TOTAL_DURATION = 15;
-const BASE_FREQ = 65;
-const SCALE_KEY = 'pentatonic';
+const TOTAL_DURATION = 20;
+const BASE_FREQ = 130;
+const SCALE_KEY = 'pentMinor';
 const PEAK_GAIN = .02;
 const MIN_GAIN = .000001;
+const RENDER_FRAME_RATE = 50; // in ms
 
-
+var analyser = null;
 var audioContext = null;
 var lowpassFilter = null;
 var lfo = null;
 var masterGain = null;
 var synths = null;
 var timeInterval = null;
+var visualizerInterval = null;
 var scales = {
   aeolian: [0, 2, 3, 5, 7, 8, 10],
   blues: [0, 3, 5, 6, 7, 10],
@@ -28,6 +31,8 @@ var scales = {
 exports.clearContext = function(){
   if (audioContext) {
     audioContext.close();
+    clearInterval(visualizerInterval);
+    analyser = null;
     audioContext = null;
     lowpassFilter = null;
     lfo = null;
@@ -46,12 +51,17 @@ exports.init = function(colNum, rowNum){
       masterGain = audioContext.createGain();
       masterGain.connect(audioContext.destination);
     }
+    if(!analyser){
+      analyser = audioContext.createAnalyser();
+      analyser.connect(masterGain);
+      analyser.fftSize = 2048;
+    }
     if (!lowpassFilter) {
       lowpassFilter = audioContext.createBiquadFilter();
       lowpassFilter.type = "lowpass";
       lowpassFilter.frequency.value = 7000;
       lowpassFilter.gain.value = .5;
-      lowpassFilter.connect(masterGain);
+      lowpassFilter.connect(analyser);
     }
     if (!timeInterval) {
       timeInterval = (TOTAL_DURATION / colNum);
@@ -130,6 +140,14 @@ exports.translateData = function(colNum, rowNum, data){
     }
   }
   synths = null;
+  // lastly we trigger render function for audio data visualization
+  visualizerInterval = setInterval(()=>{
+    visualizer.visualizeAudio(audioContext, analyser);
+  }, RENDER_FRAME_RATE);
+  let thisInterval = visualizerInterval;
+  setTimeout(()=>{
+    clearInterval(thisInterval);
+  }, TOTAL_DURATION * 1000);
 }
 
 var getUsedRows = function(data){
@@ -159,11 +177,11 @@ function Flute(fundFreq, baseFreq){
   this.gain = audioContext.createGain();
   this.gain.gain.value = MIN_GAIN;
   // attack, decay and release are pts on line from 0 to 1
-  this.attack = .1;
+  this.attack = .05;
   this.decay = .2;
-  this.release = .6;
+  this.release = .8;
   // sustain is percentage of peak gain we sustain at
-  this.sustain = .5;
+  this.sustain = .8;
   // these are our harmonics
   this.harmonics.push(new Harmonic(fundFreq, 1, .7 * (fundFreq / baseFreq), this.gain));
   this.harmonics.push(new Harmonic(fundFreq, 2, .3 * (fundFreq / baseFreq), this.gain));
@@ -183,21 +201,25 @@ function Flute(fundFreq, baseFreq){
   let wavePts = TOTAL_DURATION * 2 + (TOTAL_DURATION - Math.ceil(Math.random() * TOTAL_DURATION))
   let real = new Float32Array(wavePts);
   let imag = new Float32Array(wavePts);
+  let cachedReal = null;
+  let cachedImag = null;
   for (var i = 0; i < real.length; i++) {
-    real[i] = (real.length - i)/real.length + (1- Math.random())/4;
-    imag[i] = (real.length - i)/real.length + (1- Math.random())/4;
+    real[i] = Math.abs((cachedReal || .5) + (.2 - Math.random() * .4));
+    imag[i] = Math.abs((cachedImag || .5) + (.2 - Math.random() * .4));
     if (real[i] > 1) {
       real[i] = 1
     }
     if (imag[i] > 1) {
       imag[i] = 1
     }
+    cachedReal = real[i];
+    cachedImag = imag[i];
   }
   let wave = audioContext.createPeriodicWave(real, imag, {disableNormalization: true});
   this.lfo.oscillator.setPeriodicWave(wave);
   this.lfo.oscillator.frequency.value = 1/(TOTAL_DURATION);
   this.lfo.gain = audioContext.createGain();
-  this.lfo.gain.gain.value = .00001;
+  this.lfo.gain.gain.value = .0003;
   this.lfo.oscillator.connect(this.lfo.gain);
   this.lfo.gain.connect(this.gain.gain);
   this.gain.connect(lowpassFilter);
@@ -226,3 +248,6 @@ var getFrequency = function(index, rowNum){
 }
 
 exports.getFrequency = getFrequency;
+exports.getAudioContext = function(){
+  return audioContext;
+}

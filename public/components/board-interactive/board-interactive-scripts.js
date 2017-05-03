@@ -1,8 +1,9 @@
 /* jshint esversion: 6 */
 
 var dataParsing = require('./../../general/scripts/canvas-data-parsing');
-var synthesis = require('./../../general/scripts/audio-synthesis');
 var helpers = require('./../../general/scripts/helpers');
+var synthesis = require('./../../general/scripts/audio-synthesis');
+var visualizer = require('./../audio-visualizer/audio-visualizer-scripts');
 
 exports.mount = function(){
   const BOARD_WIDTH = 1500;

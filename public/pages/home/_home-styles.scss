@@ -1,7 +1,8 @@
 // use this wrapper to preserve scope!
 #page-home {
-  background-color: $color-black;
+  background-color: $color-gray-dark;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
 }
