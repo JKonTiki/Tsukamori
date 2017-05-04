@@ -2,20 +2,15 @@ var errors = require('./../../general/scripts/errors');
 var visualizer = require('./../../components/audio-visualizer/audio-visualizer-scripts');
 
 const TOTAL_DURATION = 20;
-const BASE_FREQ = 130;
-const SCALE_KEY = 'pentMinor';
+const BASE_FREQ = 65;
+const SCALE_KEY = 'triadMajI';
 const PEAK_GAIN = .02;
 const MIN_GAIN = .000001;
 const RENDER_FRAME_RATE = 50; // in ms
 
-var analyser = null;
-var audioContext = null;
-var lowpassFilter = null;
-var lfo = null;
-var masterGain = null;
-var synths = null;
-var timeInterval = null;
-var visualizerInterval = null;
+// initialize our global variables
+var analyser, audioContext, lowpassFilter, lfo, masterGain, synths, timeInterval, visualizerInterval;
+
 var scales = {
   aeolian: [0, 2, 3, 5, 7, 8, 10],
   blues: [0, 3, 5, 6, 7, 10],
@@ -24,8 +19,8 @@ var scales = {
   gypsyMinor: [0, 2, 3, 6, 7, 8, 11],
   pentatonic: [0, 2, 4, 7, 9],
   pentMinor: [0, 3, 5, 7, 10],
-  triadMaj: [0, 5, 7],
-  triadMin: [0, 4, 7],
+  triadMajI: [0, 5, 7],
+  triadMinI: [0, 4, 7],
 }
 
 exports.clearContext = function(){
@@ -112,16 +107,21 @@ exports.translateData = function(colNum, rowNum, data){
       rowKey = parseInt(rowKey);
       if (starting.includes(rowKey)) {
         let instrument = synths[rowKey];
+        // ADSR envelope for instrument as a whole
         instrument.gain.gain.setValueAtTime(MIN_GAIN, now + (colKey * timeInterval));
         instrument.gain.gain.exponentialRampToValueAtTime(PEAK_GAIN, now + (colKey * timeInterval) + timeInterval * instrument.attack);
         instrument.gain.gain.exponentialRampToValueAtTime(PEAK_GAIN * instrument.sustain, now + (colKey * timeInterval) + timeInterval * instrument.decay);
         synthsPlaying[rowKey] = instrument;
+        // start oscillators for individual harmonics
         for (var i = 0; i < instrument.harmonics.length; i++) {
           let harmonic = instrument.harmonics[i];
           harmonic.oscillator.start(now + (colKey * timeInterval));
         }
-        // start oscillator
+        // launch LFO
         instrument.lfo.oscillator.start(now + (colKey * timeInterval));
+        // launch breathiness, increase gain over time starting from sustain
+        instrument.noise.node.start(now + (colKey * timeInterval));
+        instrument.noise.gain.gain.linearRampToValueAtTime(instrument.noise.peakGain, now + (colKey * timeInterval) + timeInterval * 2);
         // remove from starting index so we can keep track of what remains to be started (if later needed)
         starting.splice(starting.indexOf(rowKey), 1);
       }
@@ -133,8 +133,10 @@ exports.translateData = function(colNum, rowNum, data){
           let harmonic = instrument.harmonics[i];
           harmonic.oscillator.stop(now + (colKey * timeInterval) + timeInterval);
         }
-        // stop oscillator
+        // stop LFO
         instrument.lfo.oscillator.stop(now + (colKey * timeInterval) + timeInterval);
+        // stop noise
+        instrument.noise.node.stop(now + (colKey * timeInterval) + timeInterval);
         synthsPlaying[rowKey] = false;
       }
     }
@@ -147,7 +149,7 @@ exports.translateData = function(colNum, rowNum, data){
   let thisInterval = visualizerInterval;
   setTimeout(()=>{
     clearInterval(thisInterval);
-  }, TOTAL_DURATION * 1000);
+  }, (TOTAL_DURATION + 1) * 1000);
 }
 
 var getUsedRows = function(data){
@@ -198,14 +200,16 @@ function Flute(fundFreq, baseFreq){
   // each instrument has its own lfo for vibrato simulation
   this.lfo = {};
   this.lfo.oscillator =  audioContext.createOscillator();
-  let wavePts = TOTAL_DURATION * 2 + (TOTAL_DURATION - Math.ceil(Math.random() * TOTAL_DURATION))
+  let wavePts = (TOTAL_DURATION * 3) + (TOTAL_DURATION - Math.ceil(Math.random() * TOTAL_DURATION))
   let real = new Float32Array(wavePts);
   let imag = new Float32Array(wavePts);
   let cachedReal = null;
   let cachedImag = null;
+  // our custom lfo waveform algorithm, varies at {wavePts} times during TOTAL_DURATION and meant to control jumps
+  let variance = .02;
   for (var i = 0; i < real.length; i++) {
-    real[i] = Math.abs((cachedReal || .5) + (.2 - Math.random() * .4));
-    imag[i] = Math.abs((cachedImag || .5) + (.2 - Math.random() * .4));
+    real[i] = Math.abs((cachedReal || .5) + (variance - Math.random() * (variance * 2)));
+    imag[i] = Math.abs((cachedImag || .5) + (variance - Math.random() * (variance * 2)));
     if (real[i] > 1) {
       real[i] = 1
     }
@@ -217,11 +221,30 @@ function Flute(fundFreq, baseFreq){
   }
   let wave = audioContext.createPeriodicWave(real, imag, {disableNormalization: true});
   this.lfo.oscillator.setPeriodicWave(wave);
-  this.lfo.oscillator.frequency.value = 1/(TOTAL_DURATION);
+  this.lfo.oscillator.frequency.value = 2/(TOTAL_DURATION);
   this.lfo.gain = audioContext.createGain();
-  this.lfo.gain.gain.value = .0003;
+  this.lfo.gain.gain.value = .001;
   this.lfo.oscillator.connect(this.lfo.gain);
   this.lfo.gain.connect(this.gain.gain);
+  // we play with the buffer during attack for a little breathiness
+  this.noise = {};
+  this.noise.node = audioContext.createBufferSource();
+  let buffer = audioContext.createBuffer(2, (audioContext.sampleRate * 2.0), audioContext.sampleRate);
+  let data = [0, 1]; // here we assume two channels. intial values are placeholders
+  data[0] = buffer.getChannelData(0);
+  data[1] = buffer.getChannelData(1);
+  for (var i = 0; i < (audioContext.sampleRate * 2.0); i++) {
+   data[0][i] = (Math.random()* 2 - 1) * .1;
+   data[1][i] = (Math.random()* 2 - 1) * .1;
+  }
+  this.noise.node.buffer = buffer;
+  this.noise.node.loop = true;
+  this.noise.gain = audioContext.createGain();
+  this.noise.gain.gain.value = 1;
+  this.noise.peakGain = 3;
+  this.noise.node.connect(this.noise.gain);
+  this.noise.gain.connect(this.gain);
+  // we connect the instruments gain to the master filter
   this.gain.connect(lowpassFilter);
 }
 

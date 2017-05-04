@@ -17,7 +17,7 @@ var visualizeAudio = function(audioContext, analyser){
     // let drawVisual = requestAnimationFrame(draw);
     context.fillStyle = '#eee';
     context.fillRect(0, 0, visualizer.width, visualizer.height);
-    context.lineWidth = 4;
+    context.lineWidth = 5;
     context.strokeStyle = '#333';
     context.beginPath();
     var sliceWidth = visualizer.width * 1.0 / bufferLength;
