@@ -206,7 +206,7 @@ function Flute(fundFreq, baseFreq){
   let cachedReal = null;
   let cachedImag = null;
   // our custom lfo waveform algorithm, varies at {wavePts} times during TOTAL_DURATION and meant to control jumps
-  let variance = .02;
+  let variance = .01;
   for (var i = 0; i < real.length; i++) {
     real[i] = Math.abs((cachedReal || .5) + (variance - Math.random() * (variance * 2)));
     imag[i] = Math.abs((cachedImag || .5) + (variance - Math.random() * (variance * 2)));
@@ -221,7 +221,7 @@ function Flute(fundFreq, baseFreq){
   }
   let wave = audioContext.createPeriodicWave(real, imag, {disableNormalization: true});
   this.lfo.oscillator.setPeriodicWave(wave);
-  this.lfo.oscillator.frequency.value = 2/(TOTAL_DURATION);
+  this.lfo.oscillator.frequency.value = 1/(TOTAL_DURATION);
   this.lfo.gain = audioContext.createGain();
   this.lfo.gain.gain.value = .001;
   this.lfo.oscillator.connect(this.lfo.gain);
@@ -233,15 +233,20 @@ function Flute(fundFreq, baseFreq){
   let data = [0, 1]; // here we assume two channels. intial values are placeholders
   data[0] = buffer.getChannelData(0);
   data[1] = buffer.getChannelData(1);
+  let lastOut = 0.0;
   for (var i = 0; i < (audioContext.sampleRate * 2.0); i++) {
-   data[0][i] = (Math.random()* 2 - 1) * .1;
-   data[1][i] = (Math.random()* 2 - 1) * .1;
+    let white = (Math.random()* 2 - 1) * .5;
+    let brown = (lastOut + (0.02 * white)) / 1.02;
+    data[0][i] = brown;
+    data[1][i] = brown;
+    lastOut = brown;
   }
+  console.log(data[0]);
   this.noise.node.buffer = buffer;
   this.noise.node.loop = true;
   this.noise.gain = audioContext.createGain();
-  this.noise.gain.gain.value = 1;
-  this.noise.peakGain = 3;
+  this.noise.gain.gain.value = 5;
+  this.noise.peakGain = 20;
   this.noise.node.connect(this.noise.gain);
   this.noise.gain.connect(this.gain);
   // we connect the instruments gain to the master filter
