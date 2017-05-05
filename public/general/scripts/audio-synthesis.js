@@ -1,15 +1,18 @@
+var Tuna = require('tunajs');
+
 var errors = require('./../../general/scripts/errors');
 var visualizer = require('./../../components/audio-visualizer/audio-visualizer-scripts');
 
 const TOTAL_DURATION = 20;
-const BASE_FREQ = 65;
-const SCALE_KEY = 'triadMajI';
+const BASE_FREQ = 130;
+const SCALE_KEY = 'pentatonic';
+const IMPULSE_RESPONSE_FILE = 'Large Wide Echo Hall';
 const PEAK_GAIN = .02;
 const MIN_GAIN = .000001;
 const RENDER_FRAME_RATE = 50; // in ms
 
 // initialize our global variables
-var analyser, audioContext, lowpassFilter, lfo, masterGain, synths, timeInterval, visualizerInterval;
+var analyser, audioContext, effects, lfo, masterGain, synths, timeInterval, tuna, visualizerInterval;
 
 var scales = {
   aeolian: [0, 2, 3, 5, 7, 8, 10],
@@ -29,7 +32,7 @@ exports.clearContext = function(){
     clearInterval(visualizerInterval);
     analyser = null;
     audioContext = null;
-    lowpassFilter = null;
+    effects = null;
     lfo = null;
     masterGain = null;
   }
@@ -37,34 +40,64 @@ exports.clearContext = function(){
 
 exports.init = function(colNum, rowNum){
   // define our audio context
-  try {
+  // try {
     window.AudioContext = window.AudioContext || window.webkitAudioContext;
     if (!audioContext) {
       audioContext = new AudioContext();
+      tuna = new Tuna(audioContext);
     }
     if (!masterGain) {
       masterGain = audioContext.createGain();
       masterGain.connect(audioContext.destination);
+      masterGain.gain.value = .5;
     }
     if(!analyser){
       analyser = audioContext.createAnalyser();
       analyser.connect(masterGain);
       analyser.fftSize = 2048;
     }
-    if (!lowpassFilter) {
-      lowpassFilter = audioContext.createBiquadFilter();
-      lowpassFilter.type = "lowpass";
-      lowpassFilter.frequency.value = 7000;
-      lowpassFilter.gain.value = .5;
-      lowpassFilter.connect(analyser);
+    if (!effects) {
+      effects = {};
+      // lowpassfilter
+      effects.lowpassFilter = audioContext.createBiquadFilter();
+      effects.lowpassFilter.type = "lowpass";
+      effects.lowpassFilter.frequency.value = 7000;
+      effects.lowpassFilter.gain.value = 1;
+      // chorus
+      effects.chorus = new tuna.Chorus({
+        rate: 8,
+        feedback: .2,
+        delay: .005,
+        bypass: 0
+      });
+      // tremolo
+      effects.tremolo = new tuna.Tremolo({
+        intensity: 0.01,
+        rate: .005,
+        stereoPhase: 0,
+        bypass: 0
+      });
+      effects.reverb = new tuna.Convolver({
+        highCut: 22050,                         //20 to 22050
+        lowCut: 20,                             //20 to 22050
+        dryLevel: .2,                            //0 to 1+
+        wetLevel: 1,                            //0 to 1+
+        level: 1,                               //0 to 1+, adjusts total output of both wet and dry
+        impulse: `./../../assets/impulse-responses/${IMPULSE_RESPONSE_FILE}.wav`,
+        bypass: 0
+      });
+      effects.lowpassFilter.connect(effects.chorus);
+      effects.chorus.connect(effects.tremolo);
+      effects.tremolo.connect(effects.reverb);
+      effects.reverb.connect(analyser);
     }
     if (!timeInterval) {
       timeInterval = (TOTAL_DURATION / colNum);
     }
-  } catch (e) {
-    console.warn(e);
-    return;
-  }
+  // } catch (e) {
+    // console.warn(e);
+    // return;
+  // }
 }
 
 exports.translateData = function(colNum, rowNum, data){
@@ -149,7 +182,7 @@ exports.translateData = function(colNum, rowNum, data){
   let thisInterval = visualizerInterval;
   setTimeout(()=>{
     clearInterval(thisInterval);
-  }, (TOTAL_DURATION + 1) * 1000);
+  }, (TOTAL_DURATION + (TOTAL_DURATION * .1)) * 1000);
 }
 
 var getUsedRows = function(data){
@@ -180,7 +213,7 @@ function Flute(fundFreq, baseFreq){
   this.gain.gain.value = MIN_GAIN;
   // attack, decay and release are pts on line from 0 to 1
   this.attack = .05;
-  this.decay = .2;
+  this.decay = .1;
   this.release = .8;
   // sustain is percentage of peak gain we sustain at
   this.sustain = .8;
@@ -206,8 +239,10 @@ function Flute(fundFreq, baseFreq){
   let cachedReal = null;
   let cachedImag = null;
   // our custom lfo waveform algorithm, varies at {wavePts} times during TOTAL_DURATION and meant to control jumps
-  let variance = .01;
+  let masterVariance = .01;
   for (var i = 0; i < real.length; i++) {
+    // to have effect build up over duration, like a flute player losing stability towards end of lungspan
+    let variance = masterVariance * Math.sqrt( i / real.length);
     real[i] = Math.abs((cachedReal || .5) + (variance - Math.random() * (variance * 2)));
     imag[i] = Math.abs((cachedImag || .5) + (variance - Math.random() * (variance * 2)));
     if (real[i] > 1) {
@@ -223,7 +258,7 @@ function Flute(fundFreq, baseFreq){
   this.lfo.oscillator.setPeriodicWave(wave);
   this.lfo.oscillator.frequency.value = 1/(TOTAL_DURATION);
   this.lfo.gain = audioContext.createGain();
-  this.lfo.gain.gain.value = .001;
+  this.lfo.gain.gain.value = .003;
   this.lfo.oscillator.connect(this.lfo.gain);
   this.lfo.gain.connect(this.gain.gain);
   // we play with the buffer during attack for a little breathiness
@@ -241,16 +276,15 @@ function Flute(fundFreq, baseFreq){
     data[1][i] = brown;
     lastOut = brown;
   }
-  console.log(data[0]);
   this.noise.node.buffer = buffer;
   this.noise.node.loop = true;
   this.noise.gain = audioContext.createGain();
-  this.noise.gain.gain.value = 5;
-  this.noise.peakGain = 20;
+  this.noise.gain.gain.value = 1;
+  this.noise.peakGain = 5;
   this.noise.node.connect(this.noise.gain);
   this.noise.gain.connect(this.gain);
   // we connect the instruments gain to the master filter
-  this.gain.connect(lowpassFilter);
+  this.gain.connect(effects.lowpassFilter);
 }
 
 function Harmonic(fundFreq, number, gainRatio, instrumentGain) {
