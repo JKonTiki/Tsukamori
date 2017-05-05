@@ -1,12 +1,13 @@
 var Tuna = require('tunajs');
 
+var config = require('./../../general/scripts/config');
 var errors = require('./../../general/scripts/errors');
 var visualizer = require('./../../components/audio-visualizer/audio-visualizer-scripts');
 
-const TOTAL_DURATION = 20;
-const BASE_FREQ = 130;
-const SCALE_KEY = 'pentatonic';
-const IMPULSE_RESPONSE_FILE = 'Large Wide Echo Hall';
+const TOTAL_DURATION = config.TOTAL_DURATION;
+const BASE_FREQ = config.BASE_FREQ;
+const SCALE_KEY = config.SCALE_KEY;
+const IMPULSE_RESPONSE_FILE = config.IMPULSE_RESPONSE_FILE;
 const PEAK_GAIN = .02;
 const MIN_GAIN = .000001;
 const RENDER_FRAME_RATE = 50; // in ms
@@ -65,30 +66,42 @@ exports.init = function(colNum, rowNum){
       effects.lowpassFilter.gain.value = 1;
       // chorus
       effects.chorus = new tuna.Chorus({
-        rate: 8,
-        feedback: .2,
+        rate: 3,
+        feedback: 0,
         delay: .005,
         bypass: 0
       });
       // tremolo
       effects.tremolo = new tuna.Tremolo({
-        intensity: 0.01,
-        rate: .005,
+        intensity: 0.1,
+        rate: 4,
         stereoPhase: 0,
+        bypass: 0
+      });
+      // compressor
+      effects.compressor = new tuna.Compressor({
+        threshold: -1,    //-100 to 0
+        makeupGain: 1,     //0 and up (in decibels)
+        attack: 100,         //0 to 1000
+        release: 0,        //0 to 3000
+        ratio: 4,          //1 to 20
+        knee: 2,           //0 to 40
+        automakeup: false,  //true/false
         bypass: 0
       });
       effects.reverb = new tuna.Convolver({
         highCut: 22050,                         //20 to 22050
         lowCut: 20,                             //20 to 22050
-        dryLevel: .2,                            //0 to 1+
-        wetLevel: 1,                            //0 to 1+
+        dryLevel: .5,                            //0 to 1+
+        wetLevel: .8,                            //0 to 1+
         level: 1,                               //0 to 1+, adjusts total output of both wet and dry
         impulse: `./../../assets/impulse-responses/${IMPULSE_RESPONSE_FILE}.wav`,
         bypass: 0
       });
       effects.lowpassFilter.connect(effects.chorus);
       effects.chorus.connect(effects.tremolo);
-      effects.tremolo.connect(effects.reverb);
+      effects.tremolo.connect(effects.compressor);
+      effects.compressor.connect(effects.reverb);
       effects.reverb.connect(analyser);
     }
     if (!timeInterval) {
@@ -233,13 +246,13 @@ function Flute(fundFreq, baseFreq){
   // each instrument has its own lfo for vibrato simulation
   this.lfo = {};
   this.lfo.oscillator =  audioContext.createOscillator();
-  let wavePts = (TOTAL_DURATION * 3) + (TOTAL_DURATION - Math.ceil(Math.random() * TOTAL_DURATION))
+  let wavePts = (TOTAL_DURATION) + (TOTAL_DURATION - Math.ceil(Math.random() * TOTAL_DURATION))
   let real = new Float32Array(wavePts);
   let imag = new Float32Array(wavePts);
   let cachedReal = null;
   let cachedImag = null;
   // our custom lfo waveform algorithm, varies at {wavePts} times during TOTAL_DURATION and meant to control jumps
-  let masterVariance = .01;
+  let masterVariance = .1;
   for (var i = 0; i < real.length; i++) {
     // to have effect build up over duration, like a flute player losing stability towards end of lungspan
     let variance = masterVariance * Math.sqrt( i / real.length);
@@ -258,7 +271,7 @@ function Flute(fundFreq, baseFreq){
   this.lfo.oscillator.setPeriodicWave(wave);
   this.lfo.oscillator.frequency.value = 1/(TOTAL_DURATION);
   this.lfo.gain = audioContext.createGain();
-  this.lfo.gain.gain.value = .003;
+  this.lfo.gain.gain.value = .001;
   this.lfo.oscillator.connect(this.lfo.gain);
   this.lfo.gain.connect(this.gain.gain);
   // we play with the buffer during attack for a little breathiness

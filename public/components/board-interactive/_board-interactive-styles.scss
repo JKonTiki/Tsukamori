@@ -1,16 +1,19 @@
+$border-size: 30px;
+
 // use this wrapper to preserve scope!
 .component-board-interactive {
   #board-interactive {
     z-index: 1;
-    background-color: $color-primary;
-    border: 1em $color-accent solid;
+    background-image: url('./../../assets/images/parchment2.jpg');
+    box-sizing: border-box;
+    border: $border-size $color-accent solid;
   }
   #testButton {
     color: $color-gray-dark;
   }
   #board-wrapper{
     position: relative;
-    padding: -5px;
+    box-sizing: border-box;
   }
   #board-backdrop{
     background-color: none;
@@ -18,7 +21,18 @@
     top: 0;
     z-index: 0;
     pointer-events: none;
-    border: 1em $color-accent solid;
+    box-sizing: border-box;
+    border: $border-size $color-accent solid;
+  }
+  #playhead{
+    position: absolute;
+    left: $border-size;
+    width: 5px;
+    background-color: $color-black;
+    z-index: 2;
+    top: $border-size;
+    pointer-events: none;
+
   }
   .frequency-label {
     color: $color-white;

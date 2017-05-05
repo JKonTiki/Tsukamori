@@ -87,12 +87,3 @@ exports.visualizeMIDI = function(data, _context, _boardWidth, _boardHeight, _pxl
     }
   }
 }
-
-exports.drawGridlines = function(_context, _boardWidth, _boardHeight, _pxlsPerCol, _pxlsPerRow, _colNum, _rowNum){
-  for (var i = 0; i < _rowNum; i++) {
-    _context.fillRect(0, _pxlsPerRow * i, _boardWidth, 3);
-  }
-  for (var i = 0; i < _colNum; i++) {
-    _context.fillRect(_pxlsPerCol * i, 0, 3, _boardHeight);
-  }
-}
