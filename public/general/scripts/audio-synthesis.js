@@ -62,11 +62,11 @@ exports.init = function(colNum, rowNum){
       // lowpassfilter
       effects.lowpassFilter = audioContext.createBiquadFilter();
       effects.lowpassFilter.type = "lowpass";
-      effects.lowpassFilter.frequency.value = 7000;
+      effects.lowpassFilter.frequency.value = 5000;
       effects.lowpassFilter.gain.value = 1;
       // chorus
       effects.chorus = new tuna.Chorus({
-        rate: 3,
+        rate: 2,
         feedback: 0,
         delay: .005,
         bypass: 0
@@ -304,7 +304,12 @@ function Harmonic(fundFreq, number, gainRatio, instrumentGain) {
   this.frequency = fundFreq * number;
   this.gainRatio = gainRatio;
   this.gain = audioContext.createGain();
-  this.gain.gain.value = this.gainRatio;
+  // reduce gain above a certain frequency, kind of like our own custom filter
+  let gain = gainRatio;
+  if (this.frequency >= 1500) {
+    gain = 1/Math.sqrt(Math.sqrt(this.frequency - 1500));
+  }
+  this.gain.gain.value = gain;
   this.oscillator = audioContext.createOscillator();
   this.oscillator.type = 'triangle';
   this.oscillator.frequency.value = this.frequency;

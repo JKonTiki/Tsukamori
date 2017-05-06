@@ -51,7 +51,7 @@ exports.mount = function(){
 
 
 
-  // backdrop.drawGridlines(boardBackdrop.getContext('2d'), BOARD_WIDTH, BOARD_HEIGHT, PXLS_PER_COL, PXLS_PER_ROW, COL_COUNT, ROW_COUNT);
+  backdrop.drawGridlines(boardBackdrop.getContext('2d'), BOARD_WIDTH, BOARD_HEIGHT, PXLS_PER_COL, PXLS_PER_ROW, COL_COUNT, ROW_COUNT);
   var boardWrapper = document.querySelector('#board-wrapper');
   for (var i = 0; i < ROW_COUNT; i++) {
     var newDiv = document.createElement('div');
@@ -70,7 +70,7 @@ exports.mount = function(){
 
   var testButtonFunc = function(){
     var parsedData = dataParsing.getPxlData(context, BOARD_WIDTH, BOARD_HEIGHT, PXLS_PER_COL, PXLS_PER_ROW, PXL_ROWS_TO_COUNT, COL_COUNT);
-    // dataParsing.visualizeMIDI(parsedData, context, BOARD_WIDTH, BOARD_HEIGHT, PXLS_PER_COL, PXLS_PER_ROW);
+    dataParsing.visualizeMIDI(parsedData, context, BOARD_WIDTH, BOARD_HEIGHT, PXLS_PER_COL, PXLS_PER_ROW);
     backdrop.animatePlayhead(playhead, BOARD_WIDTH, BOARD_HEIGHT, config.TOTAL_DURATION);
 
     let invertedData = helpers.invertCanvasData(parsedData, ROW_COUNT);

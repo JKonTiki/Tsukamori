@@ -1,3 +1,5 @@
+var config = require('./../../general/scripts/config');
+
 exports.putPoint = function(event, _mouseHeld, _boardDom, _context, _radius){
   if (_mouseHeld) {
     if (event.srcElement === _boardDom) {
@@ -74,6 +76,9 @@ exports.getPxlData = function(_context, _boardWidth, _boardHeight, _pxlsPerCol, 
 }
 
 exports.visualizeMIDI = function(data, _context, _boardWidth, _boardHeight, _pxlsPerCol, _pxlsPerRow){
+  if (!config.midify) {
+    return;
+  }
   _context.clearRect(0, 0, _boardWidth, _boardHeight);
   for (var colIndex in data){
     let width = _pxlsPerCol;
