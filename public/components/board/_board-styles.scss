@@ -1,15 +1,12 @@
 $border-size: 30px;
 
 // use this wrapper to preserve scope!
-.component-board-interactive {
-  #board-interactive {
+.component-board {
+  #board1 {
     z-index: 1;
     background-image: url('./../../assets/images/parchment2.jpg');
     box-sizing: border-box;
     border: $border-size $color-accent solid;
-  }
-  #testButton {
-    color: $color-gray-dark;
   }
   #board-wrapper{
     position: relative;

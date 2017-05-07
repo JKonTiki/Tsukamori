@@ -1,12 +1,10 @@
 /* jshint esversion: 6 */
 
-var synthesis = require('./../../general/scripts/audio-synthesis');
-
 exports.mount = function(){
 };
 
 var visualizeAudio = function(audioContext, analyser){
-  var visualizer = document.getElementById("audio-visualizer");
+  var visualizer = document.getElementById("visualizer");
   var context = visualizer.getContext("2d");
 
   var bufferLength = analyser.frequencyBinCount;
