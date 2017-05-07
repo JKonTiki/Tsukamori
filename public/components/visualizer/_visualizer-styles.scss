@@ -1,8 +1,8 @@
 // use this wrapper to preserve scope!
-.component-audio-visualizer {
-  #audio-visualizer{
+.component-visualizer {
+  #visualizer{
     background-color: $color-gray-light;
     border: 1em solid $color-black;
-    margin: 5em;
+    margin: 2em;
   }
 }
