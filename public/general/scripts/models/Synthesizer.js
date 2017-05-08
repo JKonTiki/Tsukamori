@@ -18,6 +18,7 @@ export default class Synthesizer {
     // init effects && instruments
     this.effects = this.initializeEffects();
     this.instruments = {};
+    this.instrumentHistory = [];
     this.connectPlugins(destination);
   }
 
@@ -133,7 +134,6 @@ export default class Synthesizer {
           instrument.gain.gain.setValueAtTime(MIN_GAIN, now + (colKey * timeInterval));
           instrument.gain.gain.exponentialRampToValueAtTime(PEAK_GAIN, now + (colKey * timeInterval) + timeInterval * instrument.attack);
           instrument.gain.gain.exponentialRampToValueAtTime(PEAK_GAIN * instrument.sustain, now + (colKey * timeInterval) + timeInterval * instrument.decay);
-          instrumentsPlaying[rowKey] = instrument;
           // start oscillators for individual harmonics
           for (var i = 0; i < instrument.harmonics.length; i++) {
             let harmonic = instrument.harmonics[i];
@@ -167,8 +167,8 @@ export default class Synthesizer {
   }
 
   stopOscillation(audioContext){
-    for (var i = 0; i < this.instruments.length; i++) {
-      let instrument = this.instruments[i];
+    for (var i = 0; i < this.instrumentHistory.length; i++) {
+      let instrument = this.instrumentHistory[i];
       for (var i = 0; i < instrument.harmonics.length; i++) {
         let harmonic = instrument.harmonics[i];
         harmonic.oscillator.stop();
@@ -183,7 +183,10 @@ export default class Synthesizer {
     for (var i = 0; i < config.ROW_COUNT; i++) {
       if (usedRows.includes(i) && !instrumentsPlaying[i]) {
         let fundFreq = helpers.getFrequency(i, this.scaleKey);
-        instruments[i] = new _Instrument(this.audioContext, fundFreq, config.BASE_FREQ);
+        let newInstrument = new _Instrument(this.audioContext, fundFreq, config.BASE_FREQ);
+        instruments[i] = newInstrument;
+        // instrument history is so we can stop all if needed
+        this.instrumentHistory.push(newInstrument);
         instruments[i].connectTo(this.effects.lowpassFilter);
       }
     }

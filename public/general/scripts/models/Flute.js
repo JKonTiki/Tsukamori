@@ -21,15 +21,16 @@ export default class Flute {
     this.harmonics.push(new Harmonic(audioContext, fundFreq, 2, .3 * gainRatio, this.gain));
     this.harmonics.push(new Harmonic(audioContext, fundFreq, 3,  1 * gainRatio, this.gain));
     this.harmonics.push(new Harmonic(audioContext, fundFreq, 4, .6 * gainRatio, this.gain));
-    this.harmonics.push(new Harmonic(audioContext, fundFreq, 5, .8 / gainRatio, this.gain));
-    this.harmonics.push(new Harmonic(audioContext, fundFreq, 6, .5 / gainRatio, this.gain));
-    this.harmonics.push(new Harmonic(audioContext, fundFreq, 7, .3 / gainRatio, this.gain));
+    // TODO have to cut so many oscillators, too expensive
+    // this.harmonics.push(new Harmonic(audioContext, fundFreq, 5, .8 / gainRatio, this.gain));
+    // this.harmonics.push(new Harmonic(audioContext, fundFreq, 6, .5 / gainRatio, this.gain));
+    // this.harmonics.push(new Harmonic(audioContext, fundFreq, 7, .3 / gainRatio, this.gain));
     // a little dissonance is always healthy
     let dissonantFreq = fundFreq + fundFreq * .01;
     this.harmonics.push(new Harmonic(audioContext, dissonantFreq, 1, .3 * gainRatio, this.gain));
     this.harmonics.push(new Harmonic(audioContext, dissonantFreq, 2, .3 * gainRatio, this.gain));
-    this.harmonics.push(new Harmonic(audioContext, dissonantFreq, 3, .3 / gainRatio, this.gain));
-    this.harmonics.push(new Harmonic(audioContext, dissonantFreq, 4, .3 / gainRatio, this.gain));
+    // this.harmonics.push(new Harmonic(audioContext, dissonantFreq, 3, .3 / gainRatio, this.gain));
+    // this.harmonics.push(new Harmonic(audioContext, dissonantFreq, 4, .3 / gainRatio, this.gain));
     // each instrument has its own lfo for vibrato simulation
     this.lfo = {};
     this.lfo.oscillator =  audioContext.createOscillator();

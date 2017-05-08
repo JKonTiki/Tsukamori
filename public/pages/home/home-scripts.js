@@ -45,6 +45,7 @@ exports.mount = function(){
 exports.unmount = function(){
   audioContext.close();
   audioContext = null;
+  analyser = null;
   board.unmount();
   visualizer.unmount();
 }
@@ -52,7 +53,15 @@ exports.unmount = function(){
 let playButton = document.querySelector('#play-button');
   playButton.addEventListener('click', function(){
     board.stop(audioContext);
-    board.play(audioContext, analyser, Flute);
+    audioContext.close();
+    audioContext = new AudioContext();
+    analyser = audioContext.createAnalyser();
+    analyser.fftSize = 2048;
+    analyser.connect(audioContext.destination);
+    setTimeout(()=>{
+      analyser.connect(audioContext.destination);
+      board.play(audioContext, analyser, Flute);
+    }, 50);
 });
 
 let buildPalette = function(colorChords){

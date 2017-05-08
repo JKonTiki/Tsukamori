@@ -102,48 +102,36 @@ exports.unmount = function(){
 };
 
 exports.play = function(audioContext, analyser, Instrument){
-  stop(audioContext);
+  for (let color in boards){
+    let board = boards[color];
+    let parsedData = parsing.getPxlData(board.context);
+    let invertedData = parsing.invertCanvasData(parsedData);
+    if (config.midify) {
+      drawing.visualizeMIDI(board.context, parsedData);
+    }
+    let synthesizer = new Synthesizer(audioContext, analyser, board.chord);
+    synthesizer.translateData(invertedData, Instrument);
+    boards[color]['synthesizer'] = synthesizer;
+  }
+  // PLAYHEAD
+  let playheadCallback = function(){
+    backdrop.animatePlayhead(playhead);
+  }
+  playheadCallback();
+  // set current visualizerInterval globally
+  visualizerInterval = setInterval(()=>{
+    visualizer.visualizeAudio(audioContext, analyser);
+  }, config.VISUALIZER_FRAME_RATE);
+  // set to clear at the end of the run
+  let thisInterval = visualizerInterval;
   setTimeout(()=>{
-    for (let color in boards){
-      let board = boards[color];
-      let parsedData = parsing.getPxlData(board.context);
-      let invertedData = parsing.invertCanvasData(parsedData);
-      if (config.midify) {
-        drawing.visualizeMIDI(board.context, parsedData);
-      }
-      let synthesizer = new Synthesizer(audioContext, analyser, board.chord);
-      synthesizer.translateData(invertedData, Instrument);
-      boards[color]['synthesizer'] = synthesizer;
-    }
-    // PLAYHEAD
-    let playheadCallback = function(){
-      backdrop.animatePlayhead(playhead);
-    }
-    playheadCallback();
-    // set current visualizerInterval globally
-    visualizerInterval = setInterval(()=>{
-      visualizer.visualizeAudio(audioContext, analyser);
-    }, config.VISUALIZER_FRAME_RATE);
-    // set to clear at the end of the run
-    let thisInterval = visualizerInterval;
-    setTimeout(()=>{
-      clearInterval(thisInterval);
-    }, (config.TOTAL_DURATION + (config.TOTAL_DURATION * .1)) * 1000); // a bit extra just in case
-  }, 500);
+    clearInterval(thisInterval);
+  }, (config.TOTAL_DURATION + (config.TOTAL_DURATION * .1)) * 1000); // a bit extra just in case
 }
 
 let stop = function(audioContext){
   backdrop.resetPlayhead(playhead);
   clearInterval(visualizerInterval);
-  for (let color in boards) {
-    let board = boards[color];
-    if (board.synthesizer) {
-      let synthesizer = boards[color].synthesizer;
-      synthesizer.stopOscillation(audioContext);
-    } else {
-      return;
-    }
-  }
 }
 
 exports.stop = stop;
