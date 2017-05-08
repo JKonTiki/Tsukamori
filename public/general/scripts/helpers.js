@@ -1,8 +1,8 @@
 import config  from './config';
 
 module.exports = {
-  getFrequency: function(index){
-    let intervals = config.scales[config.SCALE_KEY];
+  getFrequency: function(index, scaleKey){
+    let intervals = config.scales[scaleKey];
     let octave = Math.floor(index / (intervals.length));
     let degree = (index % intervals.length) + 1;
     let semitones = (octave * 12) + intervals[degree - 1];

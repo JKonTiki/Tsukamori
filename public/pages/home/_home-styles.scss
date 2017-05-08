@@ -1,6 +1,10 @@
 // use this wrapper to preserve scope!
 #page-home {
-  background-color: $color-gray-dark;
+  background-image: url('./../../assets/images/view3.jpg');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  background-color: $color-black;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -11,5 +15,50 @@
   width: 100%;
   #play-button {
     color: $color-gray-dark;
+  }
+  #board-palette-container{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+  }
+  #palette{
+    padding: 20px;
+    margin-left: 1em;
+    position: relative;
+    .label-container {
+      color: $color-white;
+      position: absolute;
+      font-size: 1em;
+      right: -3em;
+      background-color: $color-black;
+      border-radius: 20%;
+      padding: 5px;
+      font-size: 3em;
+      width: 3em;
+      align-items: center;
+    }
+  }
+  #below-board-container{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-right: 7em;
+  }
+  .color-selector{
+    height: 3em;
+    width: 3em;
+    margin: 1em;
+    border-radius: 50%;
+    border: $color-black 10px solid;
+  }
+
+  .active-color{
+    border-color: $color-white;
+    .label-container{
+      background-color: $color-white !important;
+      color: $color-black !important;
+    }
   }
 }

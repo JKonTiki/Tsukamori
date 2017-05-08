@@ -9,19 +9,16 @@ const MIN_GAIN = .000001;
 
 
 export default class Synthesizer {
-  constructor(audioContext, scaleKey){
+  constructor(audioContext, destination, scaleKey){
     this.audioContext = audioContext;
     this.scaleKey = scaleKey;
     // init masterGain
     this.masterGain = audioContext.createGain();
     this.masterGain.gain.value = .5;
-    // init analyser
-    this.analyser = audioContext.createAnalyser();
-    this.analyser.fftSize = 2048;
     // init effects && instruments
     this.effects = this.initializeEffects();
     this.instruments = {};
-    this.connectPlugins();
+    this.connectPlugins(destination);
   }
 
   initializeEffects(){
@@ -69,14 +66,13 @@ export default class Synthesizer {
     return effects;
   }
 
-  connectPlugins(){
+  connectPlugins(destination){
     this.effects.lowpassFilter.connect(this.effects.chorus);
     this.effects.chorus.connect(this.effects.tremolo);
     this.effects.tremolo.connect(this.effects.compressor);
     this.effects.compressor.connect(this.effects.reverb);
-    this.effects.reverb.connect(this.analyser);
-    this.analyser.connect(this.masterGain);
-    this.masterGain.connect(this.audioContext.destination);
+    this.effects.reverb.connect(this.masterGain);
+    this.masterGain.connect(destination);
   }
 
 
@@ -88,7 +84,7 @@ export default class Synthesizer {
     this[effectKey] = newEffect;
   }
 
-  translateData(data, _Instrument, callback){
+  translateData(data, _Instrument){
     let audioContext = this.audioContext;
     if (!audioContext) {
       throw errors.uninitiatedOscillator;
@@ -168,7 +164,6 @@ export default class Synthesizer {
       }
     }
     // this.instruments = null;
-    callback();
   }
 
   stopOscillation(audioContext){
@@ -187,7 +182,7 @@ export default class Synthesizer {
     let instruments = instrumentsPlaying || {};
     for (var i = 0; i < config.ROW_COUNT; i++) {
       if (usedRows.includes(i) && !instrumentsPlaying[i]) {
-        let fundFreq = helpers.getFrequency(i, config.ROW_COUNT);
+        let fundFreq = helpers.getFrequency(i, this.scaleKey);
         instruments[i] = new _Instrument(this.audioContext, fundFreq, config.BASE_FREQ);
         instruments[i].connectTo(this.effects.lowpassFilter);
       }

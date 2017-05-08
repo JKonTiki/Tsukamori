@@ -10,15 +10,15 @@ var drawGridlines = function(_context){
 }
 exports.drawGridlines = drawGridlines;
 
+exports.resetPlayhead = function(playhead){
+  playhead.style.transform = `none`;
+  playhead.style[`transition-property`] = `none`;
+}
+
 exports.animatePlayhead = function(playhead){
   let borderSizeInPx = 30;
   let endPt = config.BOARD_WIDTH;
-  // reset position
-  playhead.style.transform = `none`;
-  playhead.style[`transition-property`] = `none`;
-  setTimeout(()=>{ // this is improper, resetting and setting seem to be in a weird async race
-    // direct new position and transition to get there
-    playhead.style.transform = `translateX(${endPt}px)`;
-    playhead.style.transition = `transform ${config.TOTAL_DURATION}s linear`;
-  }, 1)
+  // direct new position and transition to get there
+  playhead.style.transform = `translateX(${endPt}px)`;
+  playhead.style.transition = `transform ${config.TOTAL_DURATION}s linear`;
 }

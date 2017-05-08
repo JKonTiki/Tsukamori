@@ -1,16 +1,16 @@
 let config = {
   TOTAL_DURATION: 25, // in seconds
   BASE_FREQ: 35,
-  SCALE_KEY: 'pentMinor',
   IMPULSE_RESPONSE_FILE: 'Large Wide Echo Hall',
-  COL_COUNT: 25,
-  ROW_COUNT: 25,
+  COL_COUNT: 50,
+  ROW_COUNT: 20,
   BOARD_WIDTH: 1800,
   BOARD_HEIGHT: 1800,
   VISUALIZER_FRAME_RATE: 50,
   gridlines: false,
   midify: false,
-  frequencies: false,
+  frequencies: true,
+  chordLabels: true,
   scales: {
     aeolian: [0, 2, 3, 5, 7, 8, 10],
     blues: [0, 3, 5, 6, 7, 10],
@@ -19,9 +19,16 @@ let config = {
     gypsyMinor: [0, 2, 3, 6, 7, 8, 11],
     pentatonic: [0, 2, 4, 7, 9],
     pentMinor: [0, 3, 5, 7, 10],
-    triadMajI: [0, 5, 7],
-    triadMinI: [0, 4, 7],
+    // chords
+    majI: [0, 5, 7],
+    minII: [2, 5, 9],
+    minIII: [4, 7, 11],
+    majIV: [5, 9, 12],
+    majV: [2, 7, 11],
+    minVI: [0, 4, 9],
+    minVIIdim: [4, 7, 11],
   },
+
 }
 
 config['PXLS_PER_COL'] = Math.floor(config.BOARD_WIDTH / config.COL_COUNT);

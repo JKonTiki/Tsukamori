@@ -1,12 +1,14 @@
 <!--use this wrapper to keep everything within page!-->
 <div id='page-home' class='page hidden'>
 
-  {% include "components/board/board-index.njk" %}
-
+  <div id="board-palette-container">
+    {% include "components/board/board-index.njk" %}
+    <div id="palette"></div>
+  </div>
   <br><br><br>
-
-  <span class="button" id="play-button">Play</span>
-
-  {% include "components/visualizer/visualizer-index.njk" %}
+  <div id="below-board-container">
+    <span class="button" id="play-button">Play</span>
+    {% include "components/visualizer/visualizer-index.njk" %}
+  </div>
 
 </div>

@@ -1,6 +1,6 @@
 var config = require('./../../general/scripts/config');
 
-exports.putPoint = function(event, _mouseHeld, _boardDom, _context, _radius){
+exports.putPoint = function(event, _mouseHeld, _boardDom, _context, _color, _radius){
   if (_mouseHeld) {
     if (event.srcElement === _boardDom) {
       _context.lineTo(event.offsetX, event.offsetY);
