@@ -1,12 +1,13 @@
 export default class Preset {
-  constructor(image, music, colorChords){
+  constructor(image, music, scaleKey, colorTones){
     this.image = image;
     this.music = music;
-    this.colorChords = {};
-    for (let color in colorChords){
+    this.scaleKey = scaleKey;
+    this.colorTones = {};
+    for (let color in colorTones){
       // this obj should have color keys corresponding to chordKeys
       // will be considered more primary by entry order
-      this.colorChords[color] = colorChords[color];
+      this.colorTones[color] = colorTones[color];
     }
   }
 }

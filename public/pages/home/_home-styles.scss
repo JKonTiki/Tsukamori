@@ -30,12 +30,13 @@
       color: $color-white;
       position: absolute;
       font-size: 1em;
-      right: -3em;
+      left: 5em;
       background-color: $color-black;
       border-radius: 20%;
-      padding: 5px;
+      padding: 8px;
       font-size: 3em;
-      width: 3em;
+      width: auto;
+      align-content: center;
       align-items: center;
     }
   }

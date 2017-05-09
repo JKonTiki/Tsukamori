@@ -11,6 +11,7 @@ import visualizer from './../visualizer/visualizer-scripts';
 
 let visualizerInterval = null;
 let activeBoard = null;
+let activeScaleKey = null;
 let boards = {};
 
 // get our DOM elements
@@ -18,11 +19,11 @@ let boardBackdrop = document.querySelector('#board-backdrop');
 let boardWrapper = document.querySelector('#board-wrapper');
 let playhead = document.querySelector('#playhead');
 
-exports.mount = function(colorChords){
+exports.mount = function(colorTones, scaleKey){
   const BRUSH_RADIUS = 20;
-
+  activeScaleKey = scaleKey;
   // generate canvases for color
-  for (let color in colorChords){
+  for (let color in colorTones){
     let newCanvas = document.createElement('canvas');
     newCanvas.width = config.BOARD_WIDTH;
     newCanvas.height = config.BOARD_HEIGHT;
@@ -35,7 +36,7 @@ exports.mount = function(colorChords){
     newContext.strokeStyle = `#${color}`;
     boards[color] = {};
     boards[color]['color'] = color;
-    boards[color]['chord'] = colorChords[color];
+    boards[color]['tone'] = colorTones[color];
     boards[color]['DOM'] = newCanvas;
     boards[color]['context'] = newContext;
   }
@@ -75,7 +76,7 @@ let setFreqeuncies = function(){
   }
   for (let i = 0; i < config.ROW_COUNT; i++) {
     let newDiv = document.createElement('div');
-    let label = helpers.getFrequency(config.ROW_COUNT - 1 - i, activeBoard.chord).toFixed(1).toString() + ' Hz';
+    let label = helpers.getFrequency(config.ROW_COUNT - 1 - i, activeScaleKey).toFixed(1).toString() + ' Hz';
     let labelDom = document.createTextNode(label);
     newDiv.style.top = (config.PXLS_PER_ROW * (i + 1) - 10).toString() + 'px';
     newDiv.className += ' frequency-label'
@@ -84,7 +85,7 @@ let setFreqeuncies = function(){
   }
 }
 
-exports.setActiveColor = function(color, colorChords){
+exports.setActiveColor = function(color){
   if (activeBoard) {
     activeBoard.DOM.classList.remove('active-board');
   }
@@ -101,7 +102,7 @@ exports.unmount = function(){
   document.removeEventListener('mouseup', mouseupFunc);
 };
 
-exports.play = function(audioContext, analyser, Instrument){
+exports.play = function(audioContext, destination, analyser, tuna){
   for (let color in boards){
     let board = boards[color];
     let parsedData = parsing.getPxlData(board.context);
@@ -109,8 +110,8 @@ exports.play = function(audioContext, analyser, Instrument){
     if (config.midify) {
       drawing.visualizeMIDI(board.context, parsedData);
     }
-    let synthesizer = new Synthesizer(audioContext, analyser, board.chord);
-    synthesizer.translateData(invertedData, Instrument);
+    let synthesizer = new Synthesizer(audioContext, destination, board.tone, activeScaleKey, tuna);
+    synthesizer.translateData(invertedData);
     boards[color]['synthesizer'] = synthesizer;
   }
   // PLAYHEAD

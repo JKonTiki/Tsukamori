@@ -13,6 +13,7 @@ $border-size: 30px;
   }
   .active-board {
     pointer-events: all;
+    z-index: 5;
   }
   #board-wrapper{
     position: relative;
@@ -24,6 +25,8 @@ $border-size: 30px;
     pointer-events: none;
     box-sizing: border-box;
     background-image: url('./../../assets/images/parchment2.jpg');
+    background-repeat: no-repeat;
+    background-size: cover;
     border: $border-size $color-black solid;
   }
   #playhead{
