@@ -13,7 +13,7 @@ export default class Synthesizer {
     this.instruments = {};
     this.scaleKey = scaleKey;
     this.synthGain = audioContext.createGain();
-    this.synthGain.gain.value = .01;
+    this.synthGain.gain.value = .02 * Instrument.getInstrGain();
     this.effects = this.initializeConnections(tuna, destination);
   }
 
@@ -49,7 +49,7 @@ export default class Synthesizer {
           }
         }
         let instrument = this.instruments[rowKey];
-        if (!alreadyPlaying) {
+        if (!alreadyPlaying || this.Instrument.noSustain) {
           if (!instrument) {
             console.warn(this.instruments, rowKey);
           }
@@ -78,23 +78,23 @@ export default class Synthesizer {
             if (!haveStarted) {
               instrument.lfo.oscillator.start(now + (colKey * timeInterval));
             } else {
-              instrument.lfo.gain.gain.setValueAtTime(PEAK_GAIN, now + (colKey * timeInterval) + timeInterval);
+              instrument.lfo.gain.gain.exponentialRampToValueAtTime(PEAK_GAIN, now + (colKey * timeInterval) + timeInterval);
             }
           }
           if (instrument.noise) {
             // launch breathiness, increase gain over time starting from sustain
             if (!haveStarted) {
               instrument.noise.node.start(now + (colKey * timeInterval));
-              instrument.noise.gain.gain.linearRampToValueAtTime(instrument.noise.peakGain, now + (colKey * timeInterval) + timeInterval * 2);
+              instrument.noise.gain.gain.linearRampToValueAtTime(instrument.noise.peakGain, now + (colKey * timeInterval) + timeInterval); // we take extra time to avoid harsh cut
             } else {
-              instrument.gain.gain.setValueAtTime(PEAK_GAIN, now + (colKey * timeInterval) + timeInterval);
+              instrument.noise.gain.gain.linearRampToValueAtTime(instrument.noise.peakGain, now + (colKey * timeInterval) + timeInterval); // we take extra time to avoid harsh cut
             }
           }
         }
         if (!continuesPlaying) {
           let startRelease = (colKey * timeInterval) + (timeInterval - instrument.release);
           if (startRelease > 0) {
-            instrument.gain.gain.setValueAtTime(PEAK_GAIN, now + startRelease);
+            instrument.gain.gain.setValueAtTime(PEAK_GAIN * instrument.sustain, now + startRelease);
           }
           instrument.gain.gain.exponentialRampToValueAtTime(MIN_GAIN, now + (colKey * timeInterval) + timeInterval);
           for (var i = 0; i < instrument.harmonics.length; i++) {
@@ -103,11 +103,11 @@ export default class Synthesizer {
           }
           // stop LFO
           if (instrument.lfo) {
-            instrument.lfo.gain.gain.setValueAtTime(MIN_GAIN, now + (colKey * timeInterval) + timeInterval);
+            instrument.lfo.gain.gain.exponentialRampToValueAtTime(MIN_GAIN, now + (colKey * timeInterval) + timeInterval);
           }
           // stop noise
           if (instrument.noise) {
-            instrument.gain.gain.setValueAtTime(MIN_GAIN, now + (colKey * timeInterval) + timeInterval);
+            instrument.noise.gain.gain.linearRampToValueAtTime(MIN_GAIN, now + (colKey * timeInterval) + timeInterval * 2); // we need extra small gain for this as its pretty loud
           }
         }
         for (var i = 0; i < instrument.harmonics.length; i++) {

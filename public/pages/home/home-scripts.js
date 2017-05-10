@@ -7,8 +7,9 @@ import config from './../../general/scripts/config';
 import Preset from './../../general/scripts/models/Preset';
 import visualizer from './../../components/visualizer/visualizer-scripts';
 
-import Primary from './../../general/scripts/models/Primary';
-import Secondary from './../../general/scripts/models/Secondary';
+import Flute from './../../general/scripts/models/Flute';
+import Kazoo from './../../general/scripts/models/Kazoo';
+import Wind from './../../general/scripts/models/Wind';
 
 let audioContext = null;
 let mixer = null;
@@ -31,12 +32,12 @@ exports.mount = function(){
     mixer = initializeMixer();
   }
   // eventually we want to pull presets from DB, for now we just manual generate here
-  let view3 = new Preset('view3', null, 'yo', {
-    '2f5f53': Primary,
-    '122b62': Secondary,
-    '5a5542': Primary,
-    'dfd560': Secondary,
-    // '9fb4b3': Primary,
+  let view3 = new Preset('view3', null, 'pentMinor', {
+    '2f5f53': Flute,
+    'dfd560': Kazoo,
+    '122b62': Wind,
+    // '5a5542': Flute,
+    // '9fb4b3': Kazoo,
   });
   activePreset = view3;
   buildPalette(activePreset.colorTones);
@@ -62,19 +63,19 @@ let initializeMixer = function(){
   mixer.compressor = new tuna.Compressor({
     threshold: -1,    //-100 to 0
     makeupGain: 1,     //0 and up (in decibels)
-    attack: 1,         //0 to 1000
+    attack: 0,         //0 to 1000
     release: 0,        //0 to 3000
     ratio: 4,          //1 to 20
-    knee: 2,           //0 to 40
+    knee: 10,           //0 to 40
     automakeup: false,  //true/false
     bypass: 0
   });
   mixer.analyser = audioContext.createAnalyser();
   mixer.analyser.fftSize = 2048;
   // connect equipment
-  mixer.analyser.connect(audioContext.destination);
-  // mixer.filter.connect(mixer.compressor);
-  // mixer.compressor.connect(mixer.analyser);
+  mixer.filter.connect(mixer.analyser);
+  mixer.analyser.connect(mixer.compressor);
+  mixer.compressor.connect(audioContext.destination);
   return mixer;
 }
 
@@ -89,7 +90,7 @@ let playButton = document.querySelector('#play-button');
     mixer = initializeMixer();
     setTimeout(()=>{
       mixer.analyser.connect(audioContext.destination);
-      board.play(audioContext, mixer.analyser, mixer.analyser, tuna); // we pass in immediate destination for connection
+      board.play(audioContext, mixer.filter, mixer.analyser, tuna); // we pass in immediate destination for connection
     }, 50);
 });
 

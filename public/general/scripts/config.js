@@ -1,12 +1,12 @@
 let config = {
   TOTAL_DURATION: 25, // in seconds
-  BASE_FREQ: 30,
-  COL_COUNT: 35,
-  ROW_COUNT: 35,
+  BASE_FREQ: 35,
+  COL_COUNT: 20,
+  ROW_COUNT: 30,
   BOARD_WIDTH: 2000,
   BOARD_HEIGHT: 1500,
   VISUALIZER_FRAME_RATE: 50,
-  gridlines: true,
+  gridlines: false,
   midify: false,
   frequencies: true,
   paletteLabels: true,
@@ -17,7 +17,7 @@ let config = {
     ionian: [0, 2, 4, 5, 7, 9, 11],
     gypsyMinor: [0, 2, 3, 6, 7, 8, 11],
     pentatonic: [0, 2, 4, 7, 9],
-    pentMinor: [0, 3, 5, 7, 10],
+    pentMinor: [0, 3, 5, 7, 10, 12],
     yo: [0, 2, 5, 7, 9, 12],
     // chords
     majI: [0, 5, 7],
