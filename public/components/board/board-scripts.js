@@ -16,6 +16,8 @@ let boards = {};
 
 // get our DOM elements
 let boardBackdrop = document.querySelector('#board-backdrop');
+let boardSurface = document.querySelector('#board-surface');
+let boardSurfaceCtx = boardSurface.getContext('2d');
 let boardWrapper = document.querySelector('#board-wrapper');
 let playhead = document.querySelector('#playhead');
 
@@ -44,6 +46,9 @@ exports.mount = function(colorTones, scaleKey){
   // dynamically set dimens
   boardBackdrop.width = config.BOARD_WIDTH;
   boardBackdrop.height = config.BOARD_HEIGHT;
+  boardSurface.width = config.BOARD_WIDTH;
+  boardSurface.height = config.BOARD_HEIGHT;
+  boardSurfaceCtx.lineWidth = BRUSH_RADIUS * 2;
   playhead.setAttribute('style', `height: ${config.BOARD_HEIGHT}px;`);
 
   // init background things
@@ -54,7 +59,8 @@ exports.mount = function(colorTones, scaleKey){
     // mouse event activity listeners
     let mouseHeld = false;
     let putPointProxy = function(event){
-      drawing.putPoint(event, mouseHeld, activeBoard.DOM, activeBoard.context, activeBoard.color, BRUSH_RADIUS);
+      drawing.putPoint(event, mouseHeld, activeBoard.DOM, activeBoard.context, activeBoard.color, BRUSH_RADIUS); //put point on real board
+      drawing.putPoint(event, mouseHeld, activeBoard.DOM, boardSurfaceCtx, activeBoard.color, BRUSH_RADIUS); // put point on surface board
     }
     let mousedownFunc = function(event){
       mouseHeld = true;
@@ -63,6 +69,7 @@ exports.mount = function(colorTones, scaleKey){
     let mouseupFunc = function(event){
       mouseHeld = false;
       activeBoard.context.beginPath();
+      boardSurfaceCtx.beginPath();
     }
     document.addEventListener('mousemove', putPointProxy);
     document.addEventListener('mousedown', mousedownFunc);
@@ -91,6 +98,8 @@ exports.setActiveColor = function(color){
   }
   activeBoard = boards[color];
   activeBoard.DOM.className += ' active-board';
+  boardSurfaceCtx.fillStyle = `#${color}`;
+  boardSurfaceCtx.strokeStyle = `#${color}`;
   if (config.frequencies) {
     setFreqeuncies();
   }

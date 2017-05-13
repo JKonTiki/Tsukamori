@@ -13,7 +13,7 @@ export default class Wind {
     this.gain.gain.value = constants.MIN_GAIN;
     this.instrumentGain = 1;
     // attack, decay and release are in sec(s)
-    this.attack = 1;
+    this.attack = .5;
     this.decay = .5;
     this.release = 0;
     // sustain is percentage of peak gain we sustain at
@@ -35,7 +35,7 @@ export default class Wind {
   }
 
   static getInstrGain(){
-    return 1;
+    return 2;
   }
 
   initializeNoise(){

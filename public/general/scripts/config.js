@@ -1,15 +1,15 @@
 let config = {
   TOTAL_DURATION: 25, // in seconds
   BASE_FREQ: 35,
-  COL_COUNT: 20,
+  COL_COUNT: 30,
   ROW_COUNT: 30,
   BOARD_WIDTH: 2000,
   BOARD_HEIGHT: 1500,
   VISUALIZER_FRAME_RATE: 50,
   gridlines: false,
   midify: false,
-  frequencies: true,
-  paletteLabels: true,
+  frequencies: false,
+  paletteLabels: false,
   scales: {
     aeolian: [0, 2, 3, 5, 7, 8, 10],
     blues: [0, 3, 5, 6, 7, 10],

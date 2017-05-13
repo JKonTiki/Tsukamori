@@ -10,6 +10,7 @@ $border-size: 30px;
     top: 0;
     left: 0;
     pointer-events: none;
+    opacity: 0;
   }
   .active-board {
     pointer-events: all;
@@ -34,10 +35,14 @@ $border-size: 30px;
     left: $border-size;
     width: 5px;
     background-color: $color-black;
-    z-index: 2;
+    z-index: 3;
     top: $border-size;
     pointer-events: none;
-
+  }
+  #board-surface{
+    z-index: 2;
+    pointer-events: none;
+    opacity: .7;
   }
   .frequency-label {
     color: $color-black;

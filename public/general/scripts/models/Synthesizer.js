@@ -69,8 +69,6 @@ export default class Synthesizer {
             let harmonic = instrument.harmonics[i];
             if (!haveStarted) {
               harmonic.oscillator.start(now + (colKey * timeInterval));
-            } else {
-              harmonic.gain.gain.setValueAtTime(harmonic.gainRatio, now + (colKey * timeInterval));
             }
           }
           // launch LFO
@@ -97,10 +95,6 @@ export default class Synthesizer {
             instrument.gain.gain.setValueAtTime(PEAK_GAIN * instrument.sustain, now + startRelease);
           }
           instrument.gain.gain.exponentialRampToValueAtTime(MIN_GAIN, now + (colKey * timeInterval) + timeInterval);
-          for (var i = 0; i < instrument.harmonics.length; i++) {
-            let harmonic = instrument.harmonics[i];
-            harmonic.gain.gain.setValueAtTime(MIN_GAIN, now + (colKey * timeInterval) + timeInterval + 1);
-          }
           // stop LFO
           if (instrument.lfo) {
             instrument.lfo.gain.gain.exponentialRampToValueAtTime(MIN_GAIN, now + (colKey * timeInterval) + timeInterval);

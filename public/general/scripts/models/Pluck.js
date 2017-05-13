@@ -5,7 +5,7 @@ import Harmonic  from './Harmonic';
 import config  from './../config';
 import constants  from './../constants';
 
-export default class Kazoo {
+export default class Pluck {
   constructor(audioContext, fundFreq, baseFreq){
     this.audioContext = audioContext;
     this.harmonics = [];
@@ -13,27 +13,62 @@ export default class Kazoo {
     this.gain.gain.value = constants.MIN_GAIN;
     // attack, decay and release are in sec(s)
     this.attack = .1;
-    this.decay = .5;
+    this.decay = .2;
     this.release = .1;
     // sustain is percentage of peak gain we sustain at
-    this.sustain = .8;
+    this.sustain = .4;
     // these are our harmonics
-    let gainRatio = (fundFreq / baseFreq);
-    let waveShape = 'sawtooth';
-    this.harmonics.push(new Harmonic(audioContext, fundFreq, 1, .8 * gainRatio, this.gain, waveShape));
-    // this.harmonics.push(new Harmonic(audioContext, fundFreq, 2, 1 * gainRatio, this.gain, waveShape));
-    // this.harmonics.push(new Harmonic(audioContext, fundFreq, 3,  1 * gainRatio, this.gain, waveShape));
-    // this.harmonics.push(new Harmonic(audioContext, fundFreq, 4, .8 * gainRatio, this.gain, waveShape));
-    // a little dissonance is always healthy
-    let dissonantFreq = fundFreq + fundFreq * .01;
-    this.harmonics.push(new Harmonic(audioContext, dissonantFreq, 1, .5 * gainRatio, this.gain, waveShape));
-    this.harmonics.push(new Harmonic(audioContext, dissonantFreq, 2, .5 * gainRatio, this.gain, waveShape));
-    // this.lfo = this.initializeLFO(); // each instrument has its own lfo for vibrato simulation
+    this.frequency = fundFreq;
+    let waveShape = 'triangle';
+    this.harmonics.push(new Harmonic(audioContext, fundFreq, 1, 1, this.gain, waveShape, null));
+    this.harmonics.push(new Harmonic(audioContext, fundFreq, 2, 1, this.gain, waveShape, null));
+    // this.processor = this.audioContext.createScriptProcessor( 512, 0, 2);
+    //
+    //
+    //
+    //
+    // var sampleRate = this.audioContext.sampleRate;
+    // var N = Math.round( sampleRate / fundFreq ),
+    //   impulse = sampleRate / 1000,
+    //   y = new Float32Array( N ),
+    //   n = 0;
+    // this.processor.onaudioprocess = function( e ) {
+    //   var out = e.outputBuffer.getChannelData( 0 ), i = 0, xn;
+    //   for ( ; i < out.length; ++i ) {
+    //     xn = ( --impulse >= 0 ) ? Math.random() - 0.5 : 0;
+    //     out[ i ] = y[ n ] = xn + ( y[ n ] + y[ ( n + 1 ) % N ] ) / 2;
+    //     if ( ++n >= N) {
+    //       n = 0;
+    //     }
+    //   }
+    // }.bind( this );
+    //
+    //
+
     this.noise = this.initializeNoise(); // we play with the buffer during attack for a little breathiness
   }
 
   static getInstrGain(){
-    return .4;
+    return 1;
+  }
+
+  pluck(freq){
+    return;
+    var sampleRate = this.audioContext.sampleRate;
+    var N = Math.round( sampleRate / freq ),
+      impulse = sampleRate / 1000,
+      y = new Float32Array( N ),
+      n = 0;
+    this.processor.onaudioprocess = function( e ) {
+      var out = e.outputBuffer.getChannelData( 0 ), i = 0, xn;
+      for ( ; i < out.length; ++i ) {
+        xn = ( --impulse >= 0 ) ? Math.random() - 0.5 : 0;
+        out[ i ] = y[ n ] = xn + ( y[ n ] + y[ ( n + 1 ) % N ] ) / 2;
+        if ( ++n >= N) {
+          n = 0;
+        }
+      }
+    }.bind( this );
   }
 
   initializeNoise(){
@@ -61,47 +96,14 @@ export default class Kazoo {
     return noise;
   }
 
-  initializeLFO(){
-    let lfo = {};
-    lfo.oscillator =  this.audioContext.createOscillator();
-    let wavePts = (config.TOTAL_DURATION) + (config.TOTAL_DURATION - Math.ceil(Math.random() * config.TOTAL_DURATION))
-    let real = new Float32Array(wavePts);
-    let imag = new Float32Array(wavePts);
-    let cachedReal = null;
-    let cachedImag = null;
-    // our custom lfo waveform algorithm, varies at {wavePts} times during config.TOTAL_DURATION and meant to control jumps
-    let masterVariance = .1;
-    for (var i = 0; i < real.length; i++) {
-      // to have effect build up over duration, like a flute player losing stability towards end of lungspan
-      let variance = masterVariance * Math.sqrt( i / real.length);
-      real[i] = Math.abs((cachedReal || .5) + (variance - Math.random() * (variance * 2)));
-      imag[i] = Math.abs((cachedImag || .5) + (variance - Math.random() * (variance * 2)));
-      if (real[i] > 1) {
-        real[i] = 1
-      }
-      if (imag[i] > 1) {
-        imag[i] = 1
-      }
-      cachedReal = real[i];
-      cachedImag = imag[i];
-    }
-    let wave = this.audioContext.createPeriodicWave(real, imag, {disableNormalization: true});
-    lfo.oscillator.setPeriodicWave(wave);
-    lfo.oscillator.frequency.value = 1/(config.TOTAL_DURATION);
-    lfo.gain = this.audioContext.createGain();
-    lfo.gain.gain.value = .0005;
-    lfo.oscillator.connect(lfo.gain);
-    lfo.gain.connect(this.gain.gain);
-    return lfo;
-  }
-
   connectTo(destination){
     this.gain.connect(destination)
+    // this.processor.connect(destination)
   }
 
   static getEffects(tuna){
     let effects = {};
-    effects.entryPoint = 'moog';
+    effects.entryPoint = 'wahwah';
     effects.exitPoint = 'wahwah';
     effects.tremolo = new tuna.Tremolo({
       intensity: .1,
@@ -152,12 +154,6 @@ export default class Kazoo {
         filterType: "lowpass",
         bypass: 0
     });
-    // effects.tremolo.connect(effects.wahwah);
-    effects.moog.connect(effects.phaser);
-    effects.phaser.connect(effects.bitcrusher);
-    effects.bitcrusher.connect(effects.lowPassFilter);
-    effects.lowPassFilter.connect(effects.wahwah);
-    // effects.moog.connect(effects.reverb);
     return effects;
   }
 

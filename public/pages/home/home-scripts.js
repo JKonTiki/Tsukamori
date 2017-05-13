@@ -9,6 +9,7 @@ import visualizer from './../../components/visualizer/visualizer-scripts';
 
 import Flute from './../../general/scripts/models/Flute';
 import Kazoo from './../../general/scripts/models/Kazoo';
+import Pluck from './../../general/scripts/models/Pluck';
 import Wind from './../../general/scripts/models/Wind';
 
 let audioContext = null;
@@ -34,12 +35,17 @@ exports.mount = function(){
   // eventually we want to pull presets from DB, for now we just manual generate here
   let view3 = new Preset('view3', null, 'pentMinor', {
     '2f5f53': Flute,
-    'dfd560': Kazoo,
+    '9fb4b3': Kazoo,
     '122b62': Wind,
+    // 'dfd560': Kazoo,
     // '5a5542': Flute,
-    // '9fb4b3': Kazoo,
   });
-  activePreset = view3;
+  let view11 = new Preset('view11', null, 'pentMinor', {
+    '2a6263': Flute,
+    'f9dd9c': Kazoo,
+    '082e77': Wind,
+  });
+  activePreset = view11;
   buildPalette(activePreset.colorTones);
   board.mount(activePreset.colorTones, activePreset.scaleKey);
   board.setActiveColor(activeColor);
@@ -61,11 +67,11 @@ let initializeMixer = function(){
   mixer.filter.type = "lowpass";
   mixer.filter.frequency.value = 5000;
   mixer.compressor = new tuna.Compressor({
-    threshold: -1,    //-100 to 0
+    threshold: -10,    //-100 to 0
     makeupGain: 1,     //0 and up (in decibels)
     attack: 0,         //0 to 1000
     release: 0,        //0 to 3000
-    ratio: 4,          //1 to 20
+    ratio: 8,          //1 to 20
     knee: 10,           //0 to 40
     automakeup: false,  //true/false
     bypass: 0
@@ -74,8 +80,8 @@ let initializeMixer = function(){
   mixer.analyser.fftSize = 2048;
   // connect equipment
   mixer.filter.connect(mixer.analyser);
-  mixer.analyser.connect(mixer.compressor);
-  mixer.compressor.connect(audioContext.destination);
+  mixer.analyser.connect(audioContext.destination);
+  // mixer.compressor.connect(audioContext.destination);
   return mixer;
 }
 
