@@ -175,6 +175,7 @@ exports.play = function(audioContext, destination, analyser, tuna){
     let invertedData = parsing.invertCanvasData(parsedData);
     if (config.midify) {
       drawing.visualizeMIDI(board.context, parsedData);
+      board.DOM.style.opacity = .5;
     }
     let synthesizer = new Synthesizer(audioContext, destination, board.tone, activeScaleKey, tuna);
     synthesizer.translateData(invertedData);

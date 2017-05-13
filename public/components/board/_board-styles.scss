@@ -13,7 +13,7 @@ $border-size: 30px;
     opacity: 0;
   }
   .brush {
-    z-index: 11;
+    z-index: -1;
     position: absolute;
     top: 0;
     left: 0;
@@ -40,6 +40,7 @@ $border-size: 30px;
     left: $border-size;
     width: 5px;
     background-color: $color-black;
+    filter: blur(15px);
     z-index: 3;
     top: $border-size;
     pointer-events: none;
@@ -47,7 +48,7 @@ $border-size: 30px;
   #board-surface{
     z-index: 2;
     pointer-events: none;
-    opacity: 1;
+    opacity: .9;
   }
   .frequency-label {
     color: $color-black;

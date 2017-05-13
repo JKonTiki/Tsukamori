@@ -1,13 +1,13 @@
 let config = {
   TOTAL_DURATION: 25, // in seconds
   BASE_FREQ: 35,
-  COL_COUNT: 30,
+  COL_COUNT: 40,
   ROW_COUNT: 30,
   BOARD_WIDTH: 2000,
   BOARD_HEIGHT: 1500,
   VISUALIZER_FRAME_RATE: 50,
   gridlines: false,
-  midify: false,
+  midify: true,
   frequencies: false,
   paletteLabels: false,
   scales: {

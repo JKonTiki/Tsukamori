@@ -43,7 +43,7 @@ exports.mount = function(){
   let view11 = new Preset('view11', null, 'pentMinor', {
     '2a6263': Flute,
     'f9dd9c': Kazoo,
-    '082e77': Wind,
+    '204a9b': Wind,
   });
   activePreset = view11;
   buildPalette(activePreset.colorTones);

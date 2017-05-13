@@ -101,7 +101,7 @@ let hexToHsl = function(hex){
 exports.hexToHsl = hexToHsl;
 
 exports.getHslDifferences = function(target){
-  let assetHex = 'f6c899';
+  let assetHex = '9374ee';
   let asset = hexToHsl(assetHex);
   let rotation = target.h - asset.h;
   if (rotation < 0){
@@ -109,11 +109,12 @@ exports.getHslDifferences = function(target){
   }
   let saturation = (100 + asset.s - target.s).toFixed(1);
   let luminosity = (100 + target.l - asset.l).toFixed(1);
-  if (luminosity == 46.0) {
-    luminosity = 60;
-    saturation = 100;
+  if (rotation == 146) { // custom adjustment because filter is just imperfect
+    rotation = 140;
+    luminosity = 280;
+    saturation = 40;
   }
-  console.log(rotation, saturation, luminosity);
-  console.log(asset, target);
+  // console.log(rotation, saturation, luminosity);
+  // console.log(asset, target);
   return {rotation, saturation, luminosity};
 }
