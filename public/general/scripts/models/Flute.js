@@ -14,18 +14,18 @@ export default class Flute {
     this.instrumentGain = 1;
     // attack, decay and release are in sec(s)
     this.attack = .1;
-    this.decay = .2;
+    this.decay = .5;
     this.release = 0;
     // sustain is percentage of peak gain we sustain at
-    this.sustain = .2;
+    this.sustain = .8;
     // these are our harmonics
     let gainRatio = (fundFreq / baseFreq);
     let waveShape = 'triangle';
     let cutoff = 700.0;
     this.harmonics.push(new Harmonic(audioContext, fundFreq, 1, 1 * gainRatio, this.gain, waveShape, cutoff));
     this.harmonics.push(new Harmonic(audioContext, fundFreq, 2, .6 * gainRatio, this.gain, waveShape, cutoff));
-    // this.harmonics.push(new Harmonic(audioContext, fundFreq, 3, .3 * gainRatio, this.gain, waveShape));
-    // this.harmonics.push(new Harmonic(audioContext, fundFreq, 4, .2 * gainRatio, this.gain, waveShape));
+    this.harmonics.push(new Harmonic(audioContext, fundFreq, 3, .3 * gainRatio, this.gain, waveShape));
+    this.harmonics.push(new Harmonic(audioContext, fundFreq, 4, .2 * gainRatio, this.gain, waveShape));
     // a little dissonance is always healthy
     let dissonantFreq = fundFreq + fundFreq * .01;
     // this.harmonics.push(new Harmonic(audioContext, dissonantFreq, 1, .3 * gainRatio, this.gain, waveShape));
@@ -35,7 +35,7 @@ export default class Flute {
   }
 
   static getInstrGain(){
-    return 2;
+    return .8;
   }
 
   initializeNoise(){

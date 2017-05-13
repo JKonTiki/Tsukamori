@@ -1,5 +1,7 @@
 /* jshint esversion: 6 */
 
+import domToImage from 'dom-to-image'
+
 import backdrop from './backdrop';
 import drawing from './drawing';
 import parsing from './parsing';
@@ -14,6 +16,11 @@ let activeBoard = null;
 let activeScaleKey = null;
 let boards = {};
 
+let brushImg = null;
+let brushImg1 = {};
+let lastPoint = null;
+let onTarget = false;
+
 // get our DOM elements
 let boardBackdrop = document.querySelector('#board-backdrop');
 let boardSurface = document.querySelector('#board-surface');
@@ -22,15 +29,16 @@ let boardWrapper = document.querySelector('#board-wrapper');
 let playhead = document.querySelector('#playhead');
 
 exports.mount = function(colorTones, scaleKey){
-  const BRUSH_RADIUS = 20;
+  const BRUSH_RADIUS = 40;
   activeScaleKey = scaleKey;
+  let brushImgSrc = './../../assets/images/brush.png';
   // generate canvases for color
   for (let color in colorTones){
     let newCanvas = document.createElement('canvas');
     newCanvas.width = config.BOARD_WIDTH;
     newCanvas.height = config.BOARD_HEIGHT;
     newCanvas.className += " board";
-    newCanvas.id = color + '-board';
+    newCanvas.id =  'board-' + color;
     boardWrapper.appendChild(newCanvas);
     let newContext = newCanvas.getContext('2d');
     newContext.lineWidth = BRUSH_RADIUS * 2;
@@ -41,6 +49,23 @@ exports.mount = function(colorTones, scaleKey){
     boards[color]['tone'] = colorTones[color];
     boards[color]['DOM'] = newCanvas;
     boards[color]['context'] = newContext;
+
+    let brushOriginal = document.createElement('img');
+    brushOriginal.src = brushImgSrc;
+    brushOriginal.classList = 'brush';
+    brushOriginal.style.height = `${BRUSH_RADIUS}px`;
+    let hsl = helpers.hexToHsl(color);
+    let differences = helpers.getHslDifferences(hsl);
+    brushOriginal.style.filter = `hue-rotate(${differences.rotation}deg) saturate(${differences.saturation}%) brightness(${differences.luminosity}%)`;
+    boardWrapper.appendChild(brushOriginal)
+    setTimeout(()=>{ // what we really want is this as a callback to appendChild
+      let brush = domToImage.toPng(brushOriginal)
+        .then(function(dataUrl){
+          var img = new Image();
+          img.src = dataUrl;
+          boards[color]['brush'] = img;
+        })
+    }, 50)
   }
 
   // dynamically set dimens
@@ -56,24 +81,56 @@ exports.mount = function(colorTones, scaleKey){
     backdrop.drawGridlines(boardBackdrop.getContext('2d'));
   }
 
-    // mouse event activity listeners
-    let mouseHeld = false;
-    let putPointProxy = function(event){
-      drawing.putPoint(event, mouseHeld, activeBoard.DOM, activeBoard.context, activeBoard.color, BRUSH_RADIUS); //put point on real board
-      drawing.putPoint(event, mouseHeld, activeBoard.DOM, boardSurfaceCtx, activeBoard.color, BRUSH_RADIUS); // put point on surface board
+  // mouse event activity listeners
+  let mouseHeld = false;
+  boardSurfaceCtx.lineJoin = boardSurfaceCtx.lineCap = 'round';
+  let mousedownFunc = function(event){
+    mouseHeld = true;
+    lastPoint = { x: event.offsetX, y: event.offsetY };
+    if (event.target.classList.value.indexOf('board') > -1) {
+      onTarget = true;
+    } else {
+      onTarget = false;
     }
-    let mousedownFunc = function(event){
-      mouseHeld = true;
-      putPointProxy(event);
+  }
+
+  let mouseupFunc = function(event){
+    mouseHeld = false;
+    activeBoard.context.beginPath();
+    let thisPoint = { x: event.offsetX, y: event.offsetY };
+    if (lastPoint && onTarget) {
+      if (thisPoint.x === lastPoint.x && thisPoint.y === lastPoint.y) {
+        document.querySelector('body').appendChild(activeBoard.brush);
+        activeBoard.context.drawImage(activeBoard.brush, thisPoint.x, thisPoint.y);
+      }
     }
-    let mouseupFunc = function(event){
-      mouseHeld = false;
-      activeBoard.context.beginPath();
-      boardSurfaceCtx.beginPath();
+  }
+
+  let mouseMoveProxy = function(event){
+    if (!mouseHeld) return;
+    if (event.target.classList.value.indexOf('board') > -1 && !onTarget) {
+      // if we are coming back on board, make this the new last point
+      onTarget = true;
+      lastPoint = { x: event.offsetX, y: event.offsetY };
+    } else if (event.target.classList.value.indexOf('board') === -1){
+      onTarget = false;
+      return;
     }
-    document.addEventListener('mousemove', putPointProxy);
-    document.addEventListener('mousedown', mousedownFunc);
-    document.addEventListener('mouseup', mouseupFunc);
+      var currentPoint = { x: event.offsetX, y: event.offsetY };
+      var dist = drawing.distanceBetween(lastPoint, currentPoint);
+      var angle = drawing.angleBetween(lastPoint, currentPoint);
+      let x, y;
+      for (var i = 0; i < dist; i++) {
+        x = lastPoint.x + (Math.sin(angle) * i) - 25;
+        y = lastPoint.y + (Math.cos(angle) * i) - 25;
+        boardSurfaceCtx.drawImage(activeBoard.brush, x, y);
+        activeBoard.context.drawImage(activeBoard.brush, x, y);
+      }
+      lastPoint = currentPoint;
+  }
+  document.addEventListener('mousemove', mouseMoveProxy);
+  document.addEventListener('mousedown', mousedownFunc);
+  document.addEventListener('mouseup', mouseupFunc);
 }
 
 let setFreqeuncies = function(){

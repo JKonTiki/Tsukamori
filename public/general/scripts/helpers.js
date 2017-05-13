@@ -62,3 +62,58 @@ let clone = function(item) {
   return result;
 };
 exports.deepClone = clone;
+
+let hexToHsl = function(hex){
+  var shorthandRegex = /^([a-f\d])([a-f\d])([a-f\d])$/i;
+    hex = hex.replace(shorthandRegex, function(m, r, g, b) {
+        return r + r + g + g + b + b;
+    });
+    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    result = {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+    };
+  var { r, g, b } = result;
+    r /= 255, g /= 255, b /= 255;
+    var max = Math.max(r, g, b), min = Math.min(r, g, b);
+    var h, s, l = (max + min) / 2;
+
+    if(max == min){
+        h = s = 0; // achromatic
+    }else{
+        var d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch(max){
+            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+            case g: h = (b - r) / d + 2; break;
+            case b: h = (r - g) / d + 4; break;
+        }
+        h /= 6;
+    }
+
+    return {h: Math.floor(h * 360),
+      s: Math.floor(s * 100),
+      l: Math.floor(l * 100),
+    };
+}
+
+exports.hexToHsl = hexToHsl;
+
+exports.getHslDifferences = function(target){
+  let assetHex = 'f6c899';
+  let asset = hexToHsl(assetHex);
+  let rotation = target.h - asset.h;
+  if (rotation < 0){
+    rotation += 360.0;
+  }
+  let saturation = (100 + asset.s - target.s).toFixed(1);
+  let luminosity = (100 + target.l - asset.l).toFixed(1);
+  if (luminosity == 46.0) {
+    luminosity = 60;
+    saturation = 100;
+  }
+  console.log(rotation, saturation, luminosity);
+  console.log(asset, target);
+  return {rotation, saturation, luminosity};
+}
