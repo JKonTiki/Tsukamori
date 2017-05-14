@@ -24,6 +24,7 @@ $border-size: 30px;
   #board-wrapper{
     position: relative;
     box-sizing: border-box;
+    cursor: url('./../../assets/images/brush-icon2.png'), crosshair;
   }
   #board-backdrop{
     background-color: none;
@@ -38,12 +39,42 @@ $border-size: 30px;
   #playhead{
     position: absolute;
     left: $border-size;
-    width: 5px;
-    background-color: $color-black;
-    filter: blur(15px);
+    width: 25px;
     z-index: 3;
     top: $border-size;
     pointer-events: none;
+    #playhead-blur{
+      position: absolute;
+      background-color: $color-black;
+      top:0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      filter: blur(15px);
+      opacity: .2;
+    }
+    #playhead-head{
+      position: absolute;
+      top: 0;
+      left: -12.5px;
+      height: 0;
+      width: 0;
+      border-top: 50px solid $color-black;
+      border-right: 25px solid transparent;
+      border-left: 25px solid transparent;
+      pointer-events: all;
+    }
+    #playhead-head-inner{
+      position: absolute;
+      top: 0;
+      left: -10px;
+      height: 0;
+      width: 0;
+      border-top: 40px solid $color-white;
+      border-right: 20px solid transparent;
+      border-left: 20px solid transparent;
+      pointer-events: none;
+    }
   }
   #board-surface{
     z-index: 2;

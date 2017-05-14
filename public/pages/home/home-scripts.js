@@ -86,18 +86,36 @@ let initializeMixer = function(){
 }
 
 let playButton = document.querySelector('#play-button');
-  playButton.addEventListener('click', function(){
+let pauseButton = document.querySelector('#pause-button');
+let stopButton = document.querySelector('#stop-button');
+let loopButton = document.querySelector('#loop-button');
+
+playButton.addEventListener('click', function(){
+  if (audioContext) {
     board.stop(audioContext);
     try {
       mixer.analyser.disconnect(audioContext.destination);
     } catch(e){}
     audioContext.close();
-    audioContext = new AudioContext();
-    mixer = initializeMixer();
-    setTimeout(()=>{
-      mixer.analyser.connect(audioContext.destination);
-      board.play(audioContext, mixer.filter, mixer.analyser, tuna); // we pass in immediate destination for connection
-    }, 50);
+    audioContext = null;
+  }
+  audioContext = new AudioContext();
+  mixer = initializeMixer();
+  setTimeout(()=>{
+    mixer.analyser.connect(audioContext.destination);
+    board.play(audioContext, mixer.filter, mixer.analyser, tuna); // we pass in immediate destination for connection
+  }, 50);
+});
+
+stopButton.addEventListener('click', function(){
+  if (audioContext) {
+    board.stop(audioContext);
+    try {
+      mixer.analyser.disconnect(audioContext.destination);
+    } catch(e){}
+    audioContext.close();
+    audioContext = null;
+  }
 });
 
 let buildPalette = function(colorTones){

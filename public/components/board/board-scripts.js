@@ -102,6 +102,9 @@ exports.mount = function(colorTones, scaleKey){
       if (thisPoint.x === lastPoint.x && thisPoint.y === lastPoint.y) {
         document.querySelector('body').appendChild(activeBoard.brush);
         activeBoard.context.drawImage(activeBoard.brush, thisPoint.x, thisPoint.y);
+        if (visualizerInterval) {
+          console.log('currently playing');
+        }
       }
     }
   }
@@ -125,6 +128,9 @@ exports.mount = function(colorTones, scaleKey){
         y = lastPoint.y + (Math.cos(angle) * i) - 25;
         boardSurfaceCtx.drawImage(activeBoard.brush, x, y);
         activeBoard.context.drawImage(activeBoard.brush, x, y);
+        if (visualizerInterval) {
+          console.log('currently playing');
+        }
       }
       lastPoint = currentPoint;
   }
@@ -169,6 +175,11 @@ exports.unmount = function(){
 };
 
 exports.play = function(audioContext, destination, analyser, tuna){
+  // PLAYHEAD
+  let playheadCallback = function(){
+    backdrop.animatePlayhead(playhead);
+  }
+  let counter = 0;
   for (let color in boards){
     let board = boards[color];
     let parsedData = parsing.getPxlData(board.context);
@@ -178,14 +189,14 @@ exports.play = function(audioContext, destination, analyser, tuna){
       board.DOM.style.opacity = .5;
     }
     let synthesizer = new Synthesizer(audioContext, destination, board.tone, activeScaleKey, tuna);
-    synthesizer.translateData(invertedData);
+    if (counter === 0) {
+      synthesizer.translateData(invertedData, playheadCallback);
+    }
     boards[color]['synthesizer'] = synthesizer;
+    if (counter === 0) {
+      counter++; // for now this is just to trigger the callback uniquely only one time
+    }
   }
-  // PLAYHEAD
-  let playheadCallback = function(){
-    backdrop.animatePlayhead(playhead);
-  }
-  playheadCallback();
   // set current visualizerInterval globally
   visualizerInterval = setInterval(()=>{
     visualizer.visualizeAudio(audioContext, analyser);
@@ -194,12 +205,16 @@ exports.play = function(audioContext, destination, analyser, tuna){
   let thisInterval = visualizerInterval;
   setTimeout(()=>{
     clearInterval(thisInterval);
-  }, (config.TOTAL_DURATION + (config.TOTAL_DURATION * .1)) * 1000); // a bit extra just in case
+    if (thisInterval === visualizerInterval) {
+      visualizerInterval = null;
+    }
+  }, (config.TOTAL_DURATION) * 1000);
 }
 
 let stop = function(audioContext){
   backdrop.resetPlayhead(playhead);
   clearInterval(visualizerInterval);
+  visualizerInterval = null;
 }
 
 exports.stop = stop;

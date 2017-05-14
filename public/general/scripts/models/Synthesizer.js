@@ -17,7 +17,7 @@ export default class Synthesizer {
     this.effects = this.initializeConnections(tuna, destination);
   }
 
-  translateData(data){
+  translateData(data, callback){
     let audioContext = this.audioContext;
     if (!audioContext) {
       throw errors.uninitiatedOscillator;
@@ -115,6 +115,9 @@ export default class Synthesizer {
           }
         }
       }
+    }
+    if (callback) {
+      callback();
     }
   }
 
