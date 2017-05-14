@@ -24,7 +24,6 @@ exports.getPxlData = function(context){
   var data = context.getImageData(0, 0, BOARD_WIDTH, BOARD_HEIGHT).data;
   // this parser is predicated on ^^ this data structure, which is an array of every pixel going row by row (LtR)
   // this is the number of pxls we checkpt along each row and col
-
   var rowPxlsToSkip = Math.floor(PXLS_PER_ROW/PXL_ROW_CHKPTS);
   var colPxlsToSkip = Math.floor(PXLS_PER_COL/PXL_COL_CHKPTS);
   var parsedDataByCol = {};

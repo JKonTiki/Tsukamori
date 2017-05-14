@@ -127,6 +127,10 @@ exports.mount = function(colorTones, scaleKey){
         let newQuad = newQuadrant(thisPoint);
         if (visualizerInterval && newQuad) {
           activeBoard.synthesizer.mergeInData(newQuad);
+          if (config.midify) {
+            drawing.visualizeMIDI(activeBoard.context, activeBoard.data);
+            activeBoard.DOM.style.opacity = .5;
+          }
         }
       }
     }
@@ -154,6 +158,10 @@ exports.mount = function(colorTones, scaleKey){
         let newQuad = newQuadrant(thisPoint);
         if (visualizerInterval && newQuad) {
           activeBoard.synthesizer.mergeInData(newQuad);
+          if (config.midify) {
+            drawing.visualizeMIDI(activeBoard.context, activeBoard.data);
+            activeBoard.DOM.style.opacity = .5;
+          }
         }
       }
       lastPoint = thisPoint;

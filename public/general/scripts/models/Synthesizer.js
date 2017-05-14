@@ -123,6 +123,8 @@ export default class Synthesizer {
     }
   }
 
+
+
   mergeInData(point){
     if (!point || !this.lastStart) return;
 
