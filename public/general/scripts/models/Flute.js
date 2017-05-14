@@ -14,7 +14,7 @@ export default class Flute {
     // attack, decay and release are in sec(s)
     this.attack = .2;
     this.decay = .5;
-    this.release = .1;
+    this.release = .4;
     // sustain is percentage of peak gain we sustain at
     this.sustain = .8;
     // these are our harmonics

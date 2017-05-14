@@ -93,6 +93,9 @@ exports.mount = function(colorTones, scaleKey){
         return false;
       }
     }
+    if (pointCol < 0 || pointRow < 0 || pointCol >= config.COL_COUNT || pointRow >= config.ROW_COUNT) {
+      return false;
+    }
     // update our boards data
     if (!colExists) {
       activeBoard.data[pointCol] = {};

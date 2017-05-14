@@ -1,5 +1,5 @@
 let config = {
-  TOTAL_DURATION: 25, // in seconds
+  TOTAL_DURATION: 30, // in seconds
   BASE_FREQ: 35,
   COL_COUNT: 40,
   ROW_COUNT: 30,
@@ -49,7 +49,7 @@ let makeFactor = function(candidate, product){
 
 
 // PXL_COL_CHKPTS is important as it should be the max value for a quadrant, i.e. if markings were found at all checkpoints
-config['PXL_COL_CHKPTS'] = makeFactor(8, config.PXLS_PER_ROW);
-config['PXL_ROW_CHKPTS'] = makeFactor(8, config.PXLS_PER_ROW);
+config['PXL_COL_CHKPTS'] = makeFactor(10, config.PXLS_PER_ROW);
+config['PXL_ROW_CHKPTS'] = makeFactor(10, config.PXLS_PER_ROW);
 
 module.exports = config;

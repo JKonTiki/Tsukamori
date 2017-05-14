@@ -123,10 +123,11 @@ export default class Synthesizer {
       console.warn('no instrument at rowKey', rowKey);
       return;
     }
-    // let startRelease = (colKey * this.timeInterval) + (this.timeInterval - instrument.release);
-    // if (startRelease > 0 && instrument.release > 0) {
-    //   instrument.gain.gain.setValueAtTime(PEAK_GAIN * instrument.sustain, this.startTime + startRelease);
-    // }
+    let startRelease = (colKey * this.timeInterval) + (this.timeInterval - instrument.release);
+    if (startRelease > 0 || (this.isAlreadyPlaying(colKey, rowKey) && Math.abs(startRelease) < this.timeInterval)) {
+      // TODO this only starts release within one column, we could also make it recur checkhow long it has (how many prev columns already playing) to trigger release
+      instrument.gain.gain.setValueAtTime(PEAK_GAIN * instrument.sustain, this.startTime + startRelease);
+    }
     instrument.gain.gain.exponentialRampToValueAtTime(MIN_GAIN, this.startTime + (colKey * this.timeInterval) + this.timeInterval);
     // stop LFO
     if (instrument.lfo) {
