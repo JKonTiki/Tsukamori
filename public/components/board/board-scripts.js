@@ -15,7 +15,6 @@ let visualizerInterval = null;
 let activeBoard = null;
 let activeScaleKey = null;
 let boards = {};
-let quadrantsCovered = {};
 
 let brushImg = null;
 let brushImg1 = {};
@@ -98,8 +97,10 @@ exports.mount = function(colorTones, scaleKey){
     if (!colExists) {
       activeBoard.data[pointCol] = {};
     }
-    activeBoard.data[pointCol][pointRow] = true; // later if we want number value we will have to reparse
-    return {col: pointCol, row: pointRow};
+    let value = true;
+    activeBoard.data[pointCol][pointRow] = value; // later if we want number value we will have to reparse
+    let pointObj = {[pointCol] : { [pointRow]: value}};
+    return pointObj;
   }
 
 
@@ -126,7 +127,7 @@ exports.mount = function(colorTones, scaleKey){
         activeBoard.context.drawImage(activeBoard.brush, thisPoint.x, thisPoint.y);
         let newQuad = newQuadrant(thisPoint);
         if (visualizerInterval && newQuad) {
-          activeBoard.synthesizer.mergeInData(newQuad);
+          activeBoard.synthesizer.mergeInData(parsing.invertCanvasData(newQuad));
           if (config.midify) {
             drawing.visualizeMIDI(activeBoard.context, activeBoard.data);
             activeBoard.DOM.style.opacity = .5;
@@ -157,7 +158,7 @@ exports.mount = function(colorTones, scaleKey){
         activeBoard.context.drawImage(activeBoard.brush, x, y);
         let newQuad = newQuadrant(thisPoint);
         if (visualizerInterval && newQuad) {
-          activeBoard.synthesizer.mergeInData(newQuad);
+          activeBoard.synthesizer.mergeInData(parsing.invertCanvasData(newQuad));
           if (config.midify) {
             drawing.visualizeMIDI(activeBoard.context, activeBoard.data);
             activeBoard.DOM.style.opacity = .5;
@@ -224,7 +225,7 @@ exports.play = function(audioContext, destination, analyser, tuna){
     let synthesizer = new Synthesizer(audioContext, destination, board.tone, activeScaleKey, tuna);
     boards[color]['synthesizer'] = synthesizer;
     if (counter === 0) {
-      synthesizer.translateData(invertedData, playheadCallback);
+      synthesizer.playData(invertedData, 0, playheadCallback);
     }
     boards[color]['synthesizer'] = synthesizer;
     if (counter === 0) {

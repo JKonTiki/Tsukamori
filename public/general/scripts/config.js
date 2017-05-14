@@ -6,7 +6,7 @@ let config = {
   BOARD_WIDTH: 2000,
   BOARD_HEIGHT: 1500,
   VISUALIZER_FRAME_RATE: 50,
-  gridlines: true,
+  gridlines: false,
   midify: true,
   frequencies: false,
   paletteLabels: false,
@@ -49,7 +49,7 @@ let makeFactor = function(candidate, product){
 
 
 // PXL_COL_CHKPTS is important as it should be the max value for a quadrant, i.e. if markings were found at all checkpoints
-config['PXL_COL_CHKPTS'] = makeFactor(5, config.PXLS_PER_ROW);
-config['PXL_ROW_CHKPTS'] = makeFactor(5, config.PXLS_PER_ROW);
+config['PXL_COL_CHKPTS'] = makeFactor(8, config.PXLS_PER_ROW);
+config['PXL_ROW_CHKPTS'] = makeFactor(8, config.PXLS_PER_ROW);
 
 module.exports = config;
