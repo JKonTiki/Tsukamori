@@ -39,7 +39,7 @@ $border-size: 40px;
   #playhead{
     position: absolute;
     left: $border-size;
-    width: 35px;
+    width: 30px;
     z-index: 3;
     top: $border-size;
     pointer-events: none;
@@ -56,24 +56,24 @@ $border-size: 40px;
     #playhead-head{
       position: absolute;
       top: 0;
-      left: -12.5px;
+      left: -25px; // half of top - half of playhead
       height: 0;
       width: 0;
-      border-top: 50px solid $color-black;
-      border-right: 35px solid transparent;
-      border-left: 35px solid transparent;
+      border-top: 40px solid $color-black;
+      border-right: 40px solid transparent;
+      border-left: 40px solid transparent;
       pointer-events: all;
       cursor: grab;
     }
     #playhead-head-inner{
       position: absolute;
       top: 0;
-      left: -10px;
+      left: -24px;
       height: 0;
       width: 0;
-      border-top: 40px solid $color-white;
-      border-right: 30px solid transparent;
-      border-left: 30px solid transparent;
+      border-top: 36px solid $color-white;
+      border-right: 36px solid transparent;
+      border-left: 36px solid transparent;
       pointer-events: none;
     }
   }

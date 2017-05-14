@@ -11,11 +11,10 @@ export default class Wind {
     this.harmonics = [];
     this.gain = audioContext.createGain();
     this.gain.gain.value = constants.MIN_GAIN;
-    this.instrumentGain = 1;
     // attack, decay and release are in sec(s)
     this.attack = .5;
     this.decay = .5;
-    this.release = 0;
+    this.release = .1;
     // sustain is percentage of peak gain we sustain at
     this.sustain = .2;
     // these are our harmonics
@@ -23,15 +22,6 @@ export default class Wind {
     let waveShape = 'sine';
     let cutoff = 800.0;
     this.harmonics.push(new Harmonic(audioContext, fundFreq, 1, 1 * gainRatio, this.gain, waveShape, cutoff));
-    // this.harmonics.push(new Harmonic(audioContext, fundFreq, 2, .6 * gainRatio, this.gain, waveShape, cutoff));
-    // this.harmonics.push(new Harmonic(audioContext, fundFreq, 3, .3 * gainRatio, this.gain, waveShape));
-    // this.harmonics.push(new Harmonic(audioContext, fundFreq, 4, .2 * gainRatio, this.gain, waveShape));
-    // a little dissonance is always healthy
-    let dissonantFreq = fundFreq + fundFreq * .01;
-    // this.harmonics.push(new Harmonic(audioContext, dissonantFreq, 1, .3 * gainRatio, this.gain, waveShape));
-    // this.harmonics.push(new Harmonic(audioContext, dissonantFreq, 2, .3 * gainRatio, this.gain, waveShape));
-    // this.lfo = this.initializeLFO(); // each instrument has its own lfo for vibrato simulation
-    // this.noise = this.initializeNoise(); // we play with the buffer during attack for a little breathiness
   }
 
   static getInstrGain(){
@@ -98,7 +88,7 @@ export default class Wind {
   }
 
   connectTo(destination){
-    this.gain.connect(destination)
+    this.gain.connect(destination);
   }
 
   static getEffects(tuna){

@@ -46,8 +46,7 @@ export default class Synthesizer {
         if (!continuesPlaying) {
           this.pauseInstrument(colKey, rowKey);
         }
-        let instrument = this.instruments[rowKey];
-        this.scheduleInstrumentStop(instrument, this.startTime + config.TOTAL_DURATION);
+        this.scheduleInstrumentStop(this.instruments[rowKey], this.startTime + config.TOTAL_DURATION);
       }
     }
     if (callback) {
@@ -75,6 +74,10 @@ export default class Synthesizer {
 
   playInstrument(colKey, rowKey){
     let instrument = this.instruments[rowKey];
+    if (!instrument) {
+      console.warn('no instrument at rowKey', rowKey);
+      return;
+    }
     // console.log(this.data);
     let value = this.data[colKey][rowKey];
     let hasStarted = false;
@@ -86,8 +89,9 @@ export default class Synthesizer {
     // ADSR envelope for instrument as a whole
     instrument.gain.gain.setValueAtTime(MIN_GAIN, this.startTime + (colKey * this.timeInterval));
     instrument.gain.gain.exponentialRampToValueAtTime(PEAK_GAIN, this.startTime + (colKey * this.timeInterval) + instrument.attack);
-    instrument.gain.gain.exponentialRampToValueAtTime(PEAK_GAIN * instrument.sustain, this.startTime + (colKey * this.timeInterval) + instrument.attack + instrument.decay);
-
+    if (instrument.attack + instrument.delay > this.timeInterval) {
+      instrument.gain.gain.exponentialRampToValueAtTime(PEAK_GAIN * instrument.sustain, this.startTime + (colKey * this.timeInterval) + instrument.attack + instrument.decay);
+    }
     if (!hasStarted) {
       for (var i = 0; i < instrument.harmonics.length; i++) {
         let harmonic = instrument.harmonics[i];
@@ -115,10 +119,14 @@ export default class Synthesizer {
 
   pauseInstrument(colKey, rowKey){
     let instrument = this.instruments[rowKey];
-    let startRelease = (colKey * this.timeInterval) + (this.timeInterval - instrument.release);
-    if (startRelease > 0) {
-      instrument.gain.gain.setValueAtTime(PEAK_GAIN * instrument.sustain, this.startTime + startRelease);
+    if (!instrument) {
+      console.warn('no instrument at rowKey', rowKey);
+      return;
     }
+    // let startRelease = (colKey * this.timeInterval) + (this.timeInterval - instrument.release);
+    // if (startRelease > 0 && instrument.release > 0) {
+    //   instrument.gain.gain.setValueAtTime(PEAK_GAIN * instrument.sustain, this.startTime + startRelease);
+    // }
     instrument.gain.gain.exponentialRampToValueAtTime(MIN_GAIN, this.startTime + (colKey * this.timeInterval) + this.timeInterval);
     // stop LFO
     if (instrument.lfo) {
@@ -141,16 +149,16 @@ export default class Synthesizer {
       let harmonic = instrument.harmonics[i];
       try{
         harmonic.oscillator.stop(stopTime);
-      } catch(e){};
+      } catch(e){console.log(e);};
       if (instrument.lfo) {
         try{
           instrument.lfo.oscillator.stop(stopTime);
-        } catch(e){};
+        } catch(e){console.log(e);};
       }
       if (instrument.noise) {
         try{
           instrument.noise.node.stop(stopTime);
-        } catch(e){};
+        } catch(e){console.log(e);};
       }
     }
   }
@@ -167,7 +175,9 @@ export default class Synthesizer {
         row = parseInt(rowKey);
       }
     }
-    if (this.usedRows.indexOf(row) === -1) {
+    let newRow = this.usedRows.indexOf(row) === -1;
+    if (newRow) {
+      this.usedRows.push(row);
       this.setSynths([row]);
     }
     if (!this.data[col]) {
@@ -186,6 +196,9 @@ export default class Synthesizer {
       this.pauseInstrument(col, row);
     } else {
       this.cancelNxtAttack(col, row);
+    }
+    if (newRow) {
+      this.scheduleInstrumentStop(this.instruments[row], this.startTime + config.TOTAL_DURATION);
     }
   }
 

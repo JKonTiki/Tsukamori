@@ -11,11 +11,10 @@ export default class Flute {
     this.harmonics = [];
     this.gain = audioContext.createGain();
     this.gain.gain.value = constants.MIN_GAIN;
-    this.instrumentGain = 1;
     // attack, decay and release are in sec(s)
-    this.attack = .1;
+    this.attack = .2;
     this.decay = .5;
-    this.release = 0;
+    this.release = .1;
     // sustain is percentage of peak gain we sustain at
     this.sustain = .8;
     // these are our harmonics

@@ -117,22 +117,26 @@ exports.mount = function(colorTones, scaleKey){
     }
   }
 
+  let paintPoint = function(x, y){
+    activeBoard.context.drawImage(activeBoard.brush, x, y);
+    boardSurfaceCtx.drawImage(activeBoard.brush, x, y);
+    let newQuad = newQuadrant({x, y});
+    if (visualizerInterval && newQuad) {
+      activeBoard.synthesizer.mergeInData(parsing.invertCanvasData(newQuad));
+      if (config.midify) {
+        drawing.visualizeMIDI(activeBoard.context, activeBoard.data);
+        activeBoard.DOM.style.opacity = .5;
+      }
+    }
+  }
+
   let mouseupFunc = function(event){
     mouseHeld = false;
     activeBoard.context.beginPath();
     let thisPoint = { x: event.offsetX, y: event.offsetY };
     if (lastPoint && onTarget) {
       if (thisPoint.x === lastPoint.x && thisPoint.y === lastPoint.y) {
-        document.querySelector('body').appendChild(activeBoard.brush);
-        activeBoard.context.drawImage(activeBoard.brush, thisPoint.x, thisPoint.y);
-        let newQuad = newQuadrant(thisPoint);
-        if (visualizerInterval && newQuad) {
-          activeBoard.synthesizer.mergeInData(parsing.invertCanvasData(newQuad));
-          if (config.midify) {
-            drawing.visualizeMIDI(activeBoard.context, activeBoard.data);
-            activeBoard.DOM.style.opacity = .5;
-          }
-        }
+        paintPoint(thisPoint.x, thisPoint.y)
       }
     }
   }
@@ -154,16 +158,7 @@ exports.mount = function(colorTones, scaleKey){
       for (var i = 0; i < dist; i++) {
         x = lastPoint.x + (Math.sin(angle) * i) - 25;
         y = lastPoint.y + (Math.cos(angle) * i) - 25;
-        boardSurfaceCtx.drawImage(activeBoard.brush, x, y);
-        activeBoard.context.drawImage(activeBoard.brush, x, y);
-        let newQuad = newQuadrant(thisPoint);
-        if (visualizerInterval && newQuad) {
-          activeBoard.synthesizer.mergeInData(parsing.invertCanvasData(newQuad));
-          if (config.midify) {
-            drawing.visualizeMIDI(activeBoard.context, activeBoard.data);
-            activeBoard.DOM.style.opacity = .5;
-          }
-        }
+        paintPoint(x, y);
       }
       lastPoint = thisPoint;
   }
@@ -226,6 +221,8 @@ exports.play = function(audioContext, destination, analyser, tuna){
     boards[color]['synthesizer'] = synthesizer;
     if (counter === 0) {
       synthesizer.playData(invertedData, 0, playheadCallback);
+    } else {
+      synthesizer.playData(invertedData, 0, function(){});
     }
     boards[color]['synthesizer'] = synthesizer;
     if (counter === 0) {
