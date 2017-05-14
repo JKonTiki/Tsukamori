@@ -15,6 +15,7 @@ let visualizerInterval = null;
 let activeBoard = null;
 let activeScaleKey = null;
 let boards = {};
+let quadrantsCovered = {};
 
 let brushImg = null;
 let brushImg1 = {};
@@ -65,7 +66,7 @@ exports.mount = function(colorTones, scaleKey){
           img.src = dataUrl;
           boards[color]['brush'] = img;
         })
-    }, 50)
+    }, 20)
   }
 
   // dynamically set dimens
@@ -80,6 +81,27 @@ exports.mount = function(colorTones, scaleKey){
   if (config.gridlines) {
     backdrop.drawGridlines(boardBackdrop.getContext('2d'));
   }
+
+  let newQuadrant = function(point){
+    if (!activeBoard.data) return;
+    // step 1: get quadrant of point pressed
+    let pointCol = Math.floor(point.x / config.PXLS_PER_COL);
+    let pointRow = Math.floor(point.y / config.PXLS_PER_ROW);
+    let colExists = false;
+    if (activeBoard.data[pointCol]) {
+      colExists = true;
+      if (activeBoard.data[pointCol][pointRow]) {
+        return false;
+      }
+    }
+    // update our boards data
+    if (!colExists) {
+      activeBoard.data[pointCol] = {};
+    }
+    activeBoard.data[pointCol][pointRow] = true; // later if we want number value we will have to reparse
+    return {col: pointCol, row: pointRow};
+  }
+
 
   // mouse event activity listeners
   let mouseHeld = false;
@@ -102,8 +124,9 @@ exports.mount = function(colorTones, scaleKey){
       if (thisPoint.x === lastPoint.x && thisPoint.y === lastPoint.y) {
         document.querySelector('body').appendChild(activeBoard.brush);
         activeBoard.context.drawImage(activeBoard.brush, thisPoint.x, thisPoint.y);
-        if (visualizerInterval) {
-          console.log('currently playing');
+        let newQuad = newQuadrant(thisPoint);
+        if (visualizerInterval && newQuad) {
+          activeBoard.synthesizer.mergeInData(newQuad);
         }
       }
     }
@@ -119,20 +142,21 @@ exports.mount = function(colorTones, scaleKey){
       onTarget = false;
       return;
     }
-      var currentPoint = { x: event.offsetX, y: event.offsetY };
-      var dist = drawing.distanceBetween(lastPoint, currentPoint);
-      var angle = drawing.angleBetween(lastPoint, currentPoint);
+      var thisPoint = { x: event.offsetX, y: event.offsetY };
+      var dist = drawing.distanceBetween(lastPoint, thisPoint);
+      var angle = drawing.angleBetween(lastPoint, thisPoint);
       let x, y;
       for (var i = 0; i < dist; i++) {
         x = lastPoint.x + (Math.sin(angle) * i) - 25;
         y = lastPoint.y + (Math.cos(angle) * i) - 25;
         boardSurfaceCtx.drawImage(activeBoard.brush, x, y);
         activeBoard.context.drawImage(activeBoard.brush, x, y);
-        if (visualizerInterval) {
-          console.log('currently playing');
+        let newQuad = newQuadrant(thisPoint);
+        if (visualizerInterval && newQuad) {
+          activeBoard.synthesizer.mergeInData(newQuad);
         }
       }
-      lastPoint = currentPoint;
+      lastPoint = thisPoint;
   }
   document.addEventListener('mousemove', mouseMoveProxy);
   document.addEventListener('mousedown', mousedownFunc);
@@ -184,11 +208,13 @@ exports.play = function(audioContext, destination, analyser, tuna){
     let board = boards[color];
     let parsedData = parsing.getPxlData(board.context);
     let invertedData = parsing.invertCanvasData(parsedData);
+    boards[color]['data'] = parsedData;
     if (config.midify) {
       drawing.visualizeMIDI(board.context, parsedData);
       board.DOM.style.opacity = .5;
     }
     let synthesizer = new Synthesizer(audioContext, destination, board.tone, activeScaleKey, tuna);
+    boards[color]['synthesizer'] = synthesizer;
     if (counter === 0) {
       synthesizer.translateData(invertedData, playheadCallback);
     }
@@ -209,6 +235,10 @@ exports.play = function(audioContext, destination, analyser, tuna){
       visualizerInterval = null;
     }
   }, (config.TOTAL_DURATION) * 1000);
+}
+
+exports.loop = function(){
+  console.log('coming soon!');
 }
 
 let stop = function(audioContext){

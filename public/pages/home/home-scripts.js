@@ -90,7 +90,7 @@ let pauseButton = document.querySelector('#pause-button');
 let stopButton = document.querySelector('#stop-button');
 let loopButton = document.querySelector('#loop-button');
 
-playButton.addEventListener('click', function(){
+let stop = function(){
   if (audioContext) {
     board.stop(audioContext);
     try {
@@ -99,24 +99,26 @@ playButton.addEventListener('click', function(){
     audioContext.close();
     audioContext = null;
   }
+}
+
+let startMusic = function(key){
+  stop();
   audioContext = new AudioContext();
   mixer = initializeMixer();
   setTimeout(()=>{
     mixer.analyser.connect(audioContext.destination);
-    board.play(audioContext, mixer.filter, mixer.analyser, tuna); // we pass in immediate destination for connection
+    board[key](audioContext, mixer.filter, mixer.analyser, tuna); // we pass in immediate destination for connection
   }, 50);
-});
+}
 
-stopButton.addEventListener('click', function(){
-  if (audioContext) {
-    board.stop(audioContext);
-    try {
-      mixer.analyser.disconnect(audioContext.destination);
-    } catch(e){}
-    audioContext.close();
-    audioContext = null;
-  }
-});
+let pause = function(){
+  console.log('coming soon!');
+}
+
+stopButton.addEventListener('click', ()=>{stop()});
+playButton.addEventListener('click', ()=>{startMusic('play')});
+loopButton.addEventListener('click', ()=>{startMusic('loop')});
+pauseButton.addEventListener('click', ()=>{pause()});
 
 let buildPalette = function(colorTones){
   let paletteContainer = document.querySelector('#palette');

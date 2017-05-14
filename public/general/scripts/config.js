@@ -6,7 +6,7 @@ let config = {
   BOARD_WIDTH: 2000,
   BOARD_HEIGHT: 1500,
   VISUALIZER_FRAME_RATE: 50,
-  gridlines: false,
+  gridlines: true,
   midify: true,
   frequencies: false,
   paletteLabels: false,
@@ -33,5 +33,9 @@ let config = {
 
 config['PXLS_PER_COL'] = Math.floor(config.BOARD_WIDTH / config.COL_COUNT);
 config['PXLS_PER_ROW'] = Math.floor(config.BOARD_HEIGHT / config.ROW_COUNT);
+
+config['PXL_ROW_CHKPTS'] = 5; // these will work best if factors of pxls_per_...
+config['PXL_COL_CHKPTS'] = 5; // these will work best if factors of pxls_per_...
+// ^^ this number is important as it should be the max value for a quadrant, i.e. if markings were found at all checkpoints
 
 module.exports = config;

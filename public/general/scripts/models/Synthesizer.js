@@ -15,6 +15,7 @@ export default class Synthesizer {
     this.synthGain = audioContext.createGain();
     this.synthGain.gain.value = .02 * Instrument.getInstrGain();
     this.effects = this.initializeConnections(tuna, destination);
+    this.lastStart = null;
   }
 
   translateData(data, callback){
@@ -25,6 +26,7 @@ export default class Synthesizer {
     // console.log(data);
     // console.log(instruments);
     let now = audioContext.currentTime + .01;
+    this.lastStart = now;
     let timeInterval = (config.TOTAL_DURATION / config.COL_COUNT);
     let usedRows = this.getUsedRows(data);
     // reset instruments to play again on next column
@@ -119,6 +121,12 @@ export default class Synthesizer {
     if (callback) {
       callback();
     }
+  }
+
+  mergeInData(point){
+    if (!point || !this.lastStart) return;
+
+    console.log('hi', point);
   }
 
 
