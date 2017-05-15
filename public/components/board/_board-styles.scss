@@ -1,4 +1,4 @@
-$border-size: 50px;
+$border-size: 30px;
 
 // use this wrapper to preserve scope!
 .component-board {
@@ -48,7 +48,7 @@ $border-size: 50px;
   }
   #playhead{
     position: absolute;
-    left: $border-size;
+    left: -15px; // half of width
     width: 30px;
     z-index: 3;
     top: $border-size;

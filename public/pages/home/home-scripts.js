@@ -15,6 +15,7 @@ import Wind from './../../general/scripts/models/Wind';
 let audioContext = null;
 let mixer = null;
 let tuna = null;
+let destinationPt = null;
 
 let activePreset = null;
 let activeColor = null;
@@ -82,6 +83,7 @@ let initializeMixer = function(){
   mixer.filter.connect(mixer.analyser);
   mixer.analyser.connect(audioContext.destination);
   // mixer.compressor.connect(audioContext.destination);
+  destinationPt = mixer.filter;
   return mixer;
 }
 
@@ -102,17 +104,18 @@ let stop = function(){
 }
 
 let startMusic = function(key){
+  // key should be either 'loop' or 'play'
   stop();
   audioContext = new AudioContext();
   mixer = initializeMixer();
   setTimeout(()=>{
     mixer.analyser.connect(audioContext.destination);
-    board[key](audioContext, mixer.filter, mixer.analyser, tuna); // we pass in immediate destination for connection
+    board[key](audioContext, destinationPt, mixer.analyser, tuna); // we pass in immediate destination for connection
   }, 50);
 }
 
 let pause = function(){
-  console.log('coming soon!');
+  board.pause(audioContext, destinationPt, mixer.analyser, tuna);
 }
 
 stopButton.addEventListener('click', ()=>{stop()});

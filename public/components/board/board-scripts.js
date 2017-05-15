@@ -20,6 +20,9 @@ let brushImg = null;
 let brushImg1 = {};
 let lastPoint = null;
 let onTarget = false;
+let timeElapsed = 0;
+let lastStartTime = 0;
+let isPaused = false;
 
 // get our DOM elements
 let boardBackdrop = document.querySelector('#board-backdrop');
@@ -145,6 +148,7 @@ exports.mount = function(colorTones, scaleKey){
   }
 
   let mouseMoveProxy = function(event){
+    helpers.pauseEvent(event);
     if (!mouseHeld) return;
     if (event.target.classList.value.indexOf('board') > -1 && !onTarget) {
       // if we are coming back on board, make this the new last point
@@ -205,10 +209,12 @@ exports.unmount = function(){
   document.removeEventListener('mouseup', mouseupFunc);
 };
 
-exports.play = function(audioContext, destination, analyser, tuna){
+let play = function(audioContext, destination, analyser, tuna, timeElapsed){
+  isPaused = false;
+  lastStartTime = audioContext.currentTime;
   // PLAYHEAD
   let playheadCallback = function(){
-    backdrop.animatePlayhead(playhead);
+    backdrop.animatePlayhead(playhead, timeElapsed || 0);
   }
   let counter = 0;
   for (let color in boards){
@@ -227,7 +233,6 @@ exports.play = function(audioContext, destination, analyser, tuna){
     } else {
       synthesizer.playData(invertedData, 0, function(){});
     }
-    boards[color]['synthesizer'] = synthesizer;
     if (counter === 0) {
       counter++; // for now this is just to trigger the callback uniquely only one time
     }
@@ -242,18 +247,45 @@ exports.play = function(audioContext, destination, analyser, tuna){
     clearInterval(thisInterval);
     if (thisInterval === visualizerInterval) {
       visualizerInterval = null;
+      visualizer.clear();
     }
   }, (config.TOTAL_DURATION) * 1000);
 }
+
+exports.play = play;
 
 exports.loop = function(){
   console.log('coming soon!');
 }
 
+exports.pause = function(audioContext, destination, analyser, tuna){
+  if (!visualizerInterval) return;
+  if (isPaused) {
+    play(audioContext, destination, analyser, tuna, timeElapsed)
+
+  } else {
+    timeElapsed += audioContext.currentTime - lastStartTime;
+    lastStartTime = 0;
+    isPaused = true;
+    // pause synths
+    for (let color in boards){
+      let board = boards[color];
+      let synthesizer = board.synthesizer;
+      synthesizer.pause(timeElapsed);
+    }
+    // pause playhead
+    backdrop.pausePlayhead(timeElapsed);
+  }
+}
+
 let stop = function(audioContext){
-  backdrop.resetPlayhead(playhead);
+  timeElapsed = 0;
+  lastStartTime = 0;
+  isPaused = false;
+  backdrop.setPlayhead(playhead);
   clearInterval(visualizerInterval);
   visualizerInterval = null;
+  visualizer.clear();
 }
 
 exports.stop = stop;

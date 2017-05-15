@@ -3,9 +3,10 @@
 exports.mount = function(){
 };
 
+var visualizer = document.getElementById("visualizer");
+var context = visualizer.getContext("2d");
+
 var visualizeAudio = function(audioContext, analyser){
-  var visualizer = document.getElementById("visualizer");
-  var context = visualizer.getContext("2d");
 
   var bufferLength = analyser.frequencyBinCount;
   var dataArray = new Uint8Array(bufferLength);
@@ -34,9 +35,12 @@ var visualizeAudio = function(audioContext, analyser){
     context.lineTo(visualizer.width, visualizer.height / 2);
     context.stroke();
   };
-
   draw();
+}
 
+exports.clear = function(){
+  context.fillStyle = '#eee';
+  context.fillRect(0, 0, visualizer.width, visualizer.height);
 }
 
 exports.visualizeAudio = visualizeAudio;

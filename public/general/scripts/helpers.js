@@ -118,3 +118,11 @@ exports.getHslDifferences = function(target){
   // console.log(asset, target);
   return {rotation, saturation, luminosity};
 }
+
+exports.pauseEvent = function(e){
+  if(e.stopPropagation) e.stopPropagation();
+  if(e.preventDefault) e.preventDefault();
+  e.cancelBubble=true;
+  e.returnValue=false;
+  return false;
+}

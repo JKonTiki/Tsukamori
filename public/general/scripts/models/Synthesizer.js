@@ -148,9 +148,10 @@ export default class Synthesizer {
     }
   }
 
-  pause(){
+  pause(timeElapsed){
     if (this.audioContext) {
-      this.pauseTime = audioContext.currentTime;
+      this.pauseTime = timeElapsed;
+      console.log(this.pauseTime, 'is pauseTime');
     }
   }
 
