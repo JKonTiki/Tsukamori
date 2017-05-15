@@ -18,6 +18,7 @@ export default class Synthesizer {
     this.startTime = null;
     this.pauseTime = null;
     this.data = null;
+    this.dataByRow = {};
     this.usedRows = null;
     this.timeInterval = config.TOTAL_DURATION / config.COL_COUNT;
     this.rowsStarted = [];
@@ -38,14 +39,11 @@ export default class Synthesizer {
       colKey = parseInt(colKey);
       for (let rowKey in data[colKey]){
         rowKey = parseInt(rowKey);
-        let alreadyPlaying = this.isAlreadyPlaying(colKey, rowKey);
-        let continuesPlaying = this.willContinuePlaying(colKey, rowKey);
-        if (!alreadyPlaying || this.Instrument.noSustain) {
-          this.playInstrument(colKey, rowKey);
+        if (!this.dataByRow[rowKey]) {
+          this.dataByRow[rowKey] = {};
         }
-        if (!continuesPlaying) {
-          this.pauseInstrument(colKey, rowKey);
-        }
+        this.dataByRow[rowKey][colKey] = data[colKey][rowKey];
+        this.scheduleActivity(colKey, rowKey);
         this.scheduleInstrumentStop(this.instruments[rowKey], this.startTime + config.TOTAL_DURATION);
       }
     }
@@ -70,6 +68,17 @@ export default class Synthesizer {
       }
     }
     return false;
+  }
+
+  scheduleActivity(colKey, rowKey){
+    let alreadyPlaying = this.isAlreadyPlaying(colKey, rowKey);
+    let continuesPlaying = this.willContinuePlaying(colKey, rowKey);
+    if (!alreadyPlaying || this.Instrument.noSustain) {
+      this.playInstrument(colKey, rowKey);
+    }
+    if (!continuesPlaying) {
+      this.pauseInstrument(colKey, rowKey);
+    }
   }
 
   playInstrument(colKey, rowKey){
@@ -185,6 +194,10 @@ export default class Synthesizer {
       this.data[col] = {};
     }
     this.data[col][row] = point[col][row];
+    if (!this.dataByRow[row]) {
+      this.dataByRow[row] = {};
+    }
+    this.dataByRow[row][col] = this.data[col][row];
     let instrument = this.instruments[row];
     let alreadyPlaying = this.isAlreadyPlaying(col, row);
     let continuesPlaying = this.willContinuePlaying(col, row);
@@ -203,14 +216,33 @@ export default class Synthesizer {
     }
   }
 
+  cancelAllEvents(row){
+    let instrument = this.instruments[row];
+    if (!instrument) {
+      console.warn('no instrument at rowKey', row);
+      return;
+    }
+    instrument.gain.gain.cancelScheduledValues(this.audioContext.currentTime);
+    if (instrument.lfo) {
+      instrument.lfo.gain.gain.cancelScheduledValues(this.audioContext.currentTime);
+    }
+    if (instrument.noise) {
+      instrument.noise.gain.gain.cancelScheduledValues(this.audioContext.currentTime);
+    }
+  }
+
   extendSustain(col, row){
-    // cancel stop and add new one at Col
-    this.playInstrument(col, row);
+    this.cancelAllEvents(row)
+    for(let colKey in this.dataByRow[row]){
+      this.scheduleActivity(parseInt(colKey), row);
+    }
   }
 
   cancelNxtAttack(col, row){
-    // cancel start for col + 1
-    this.pauseInstrument(col, row);
+    this.cancelAllEvents(row);
+    for(let colKey in this.dataByRow[row]){
+      this.scheduleActivity(parseInt(colKey), row);
+    }
   }
 
 
