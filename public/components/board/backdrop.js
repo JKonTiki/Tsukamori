@@ -1,7 +1,7 @@
 var config = require('./../../general/scripts/config');
 
-let startingPt = -15; // the width of our #playhead div
-let destPt = config.BOARD_WIDTH + 2 * Math.abs(startingPt);
+let startingPt = 0;
+let destPt = config.BOARD_WIDTH + Math.abs(startingPt);
 
 var drawGridlines = function(_context){
   for (var i = 0; i < config.ROW_COUNT; i++) {
@@ -16,11 +16,13 @@ exports.drawGridlines = drawGridlines;
 let setPlayhead = function(playhead, pausePoint){
   playhead.style.transform = `none`;
   playhead.style[`transition-property`] = `none`;
-  if (pausePoint) {
-    playhead.style.left = `${pausePoint}px`;
-  } else {
-    playhead.style.left = `${startingPt}px`;
-  }
+  setTimeout(()=>{
+    if (pausePoint > 0) {
+      playhead.style.left = `${pausePoint}px`;
+    } else {
+      playhead.style.left = `${startingPt}px`;
+    }
+  }, 1);
 }
 exports.setPlayhead = setPlayhead;
 

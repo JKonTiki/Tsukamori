@@ -4,7 +4,7 @@ $border-size: 30px;
 .component-board {
   .board {
     z-index: 1;
-    box-sizing: border-box;
+    // box-sizing: border-box;
     border: $border-size $color-black solid;
     position: absolute;
     top: 0;
@@ -23,8 +23,9 @@ $border-size: 30px;
   }
   #board-wrapper{
     position: relative;
-    box-sizing: border-box;
+    // box-sizing: border-box;
     cursor: url('./../../assets/images/brush-icon2.png'), crosshair;
+    overflow: hidden;
   }
   #board-border{
     position: absolute;
@@ -34,13 +35,14 @@ $border-size: 30px;
     left: 0;
     z-index: 4;
     pointer-events: none;
+    // box-sizing: border-box;
     border: $border-size $color-black solid;
   }
   #board-backdrop{
     background-color: none;
     z-index: 0;
     pointer-events: none;
-    box-sizing: border-box;
+    // box-sizing: border-box;
     background-image: url('./../../assets/images/parchment2.jpg');
     background-repeat: no-repeat;
     background-size: cover;
@@ -48,7 +50,7 @@ $border-size: 30px;
   }
   #playhead{
     position: absolute;
-    left: -15px; // half of width
+    left: -0;
     width: 30px;
     z-index: 3;
     top: $border-size;

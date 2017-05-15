@@ -22,7 +22,6 @@ let lastPoint = null;
 let onTarget = false;
 let timeElapsed = 0;
 let lastStartTime = 0;
-let isPaused = false;
 
 // get our DOM elements
 let boardBackdrop = document.querySelector('#board-backdrop');
@@ -209,8 +208,7 @@ exports.unmount = function(){
   document.removeEventListener('mouseup', mouseupFunc);
 };
 
-let play = function(audioContext, destination, analyser, tuna, timeElapsed){
-  isPaused = false;
+let play = function(audioContext, destination, analyser, tuna){
   lastStartTime = audioContext.currentTime;
   // PLAYHEAD
   let playheadCallback = function(){
@@ -229,9 +227,9 @@ let play = function(audioContext, destination, analyser, tuna, timeElapsed){
     let synthesizer = new Synthesizer(audioContext, destination, board.tone, activeScaleKey, tuna);
     boards[color]['synthesizer'] = synthesizer;
     if (counter === 0) {
-      synthesizer.playData(invertedData, 0, playheadCallback);
+      synthesizer.playData(invertedData, timeElapsed, playheadCallback);
     } else {
-      synthesizer.playData(invertedData, 0, function(){});
+      synthesizer.playData(invertedData, timeElapsed, function(){});
     }
     if (counter === 0) {
       counter++; // for now this is just to trigger the callback uniquely only one time
@@ -258,34 +256,34 @@ exports.loop = function(){
   console.log('coming soon!');
 }
 
-exports.pause = function(audioContext, destination, analyser, tuna){
-  if (!visualizerInterval) return;
-  if (isPaused) {
-    play(audioContext, destination, analyser, tuna, timeElapsed)
-
-  } else {
-    timeElapsed += audioContext.currentTime - lastStartTime;
-    lastStartTime = 0;
-    isPaused = true;
-    // pause synths
-    for (let color in boards){
-      let board = boards[color];
-      let synthesizer = board.synthesizer;
-      synthesizer.pause(timeElapsed);
+let clearSounds = function(){
+  for (let color in boards){
+    let board = boards[color];
+    if (board.synthesizer && visualizerInterval) {
+      board.synthesizer.stopAllInstruments();
+    } else {
+      break;
     }
-    // pause playhead
-    backdrop.pausePlayhead(timeElapsed);
   }
+}
+
+exports.pause = function(audioContext){
+  if (!visualizerInterval) return;
+  timeElapsed += audioContext.currentTime - lastStartTime;
+  lastStartTime = 0;
+  // pause playhead
+  backdrop.pausePlayhead(timeElapsed);
+  clearSounds();
 }
 
 let stop = function(audioContext){
   timeElapsed = 0;
   lastStartTime = 0;
-  isPaused = false;
   backdrop.setPlayhead(playhead);
   clearInterval(visualizerInterval);
   visualizerInterval = null;
   visualizer.clear();
+  clearSounds();
 }
 
 exports.stop = stop;

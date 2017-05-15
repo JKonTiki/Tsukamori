@@ -4,6 +4,7 @@ import Tuna  from 'tunajs';
 
 import board from './../../components/board/board-scripts';
 import config from './../../general/scripts/config';
+import constants from './../../general/scripts/constants';
 import Preset from './../../general/scripts/models/Preset';
 import visualizer from './../../components/visualizer/visualizer-scripts';
 
@@ -20,6 +21,8 @@ let destinationPt = null;
 let activePreset = null;
 let activeColor = null;
 let colorDivs = {};
+
+let isPaused = false;
 
 exports.mount = function(){
   try {
@@ -64,6 +67,7 @@ exports.unmount = function(){
 let initializeMixer = function(){
   tuna = new Tuna(audioContext);
   let mixer = {};
+  mixer.gain = audioContext.createGain();
   mixer.filter = audioContext.createBiquadFilter();
   mixer.filter.type = "lowpass";
   mixer.filter.frequency.value = 5000;
@@ -80,10 +84,11 @@ let initializeMixer = function(){
   mixer.analyser = audioContext.createAnalyser();
   mixer.analyser.fftSize = 2048;
   // connect equipment
+  mixer.gain.connect(mixer.filter);
   mixer.filter.connect(mixer.analyser);
   mixer.analyser.connect(audioContext.destination);
   // mixer.compressor.connect(audioContext.destination);
-  destinationPt = mixer.filter;
+  destinationPt = mixer.gain;
   return mixer;
 }
 
@@ -94,33 +99,47 @@ let loopButton = document.querySelector('#loop-button');
 
 let stop = function(){
   if (audioContext) {
-    board.stop(audioContext);
-    try {
-      mixer.analyser.disconnect(audioContext.destination);
-    } catch(e){}
-    audioContext.close();
-    audioContext = null;
+    mixer.gain.gain.value = constants.MIN_GAIN;
+    board.stop();
   }
 }
 
-let startMusic = function(key){
-  // key should be either 'loop' or 'play'
-  stop();
-  audioContext = new AudioContext();
-  mixer = initializeMixer();
+let play = function(){
+  if (!isPaused) {
+    stop();
+  }
+  isPaused = false;
+  if (mixer.gain.gain.value !== 1) {
+    mixer.gain.gain.value = 1;
+  }
   setTimeout(()=>{
-    mixer.analyser.connect(audioContext.destination);
-    board[key](audioContext, destinationPt, mixer.analyser, tuna); // we pass in immediate destination for connection
-  }, 50);
+    board.play(audioContext, destinationPt, mixer.analyser, tuna);
+  }, 20);
+}
+
+let loop = function(){
+  if (!isPaused) {
+    stop();
+  }
+  setTimeout(()=>{
+    board.loop(audioContext, destinationPt, mixer.analyser, tuna);
+  }, 20);
 }
 
 let pause = function(){
-  board.pause(audioContext, destinationPt, mixer.analyser, tuna);
+  if (!isPaused) {
+    isPaused = true;
+    mixer.gain.gain.value = constants.MIN_GAIN;
+    board.pause(audioContext, destinationPt, mixer.analyser, tuna);
+  } else {
+    play();
+  }
 }
 
+
 stopButton.addEventListener('click', ()=>{stop()});
-playButton.addEventListener('click', ()=>{startMusic('play')});
-loopButton.addEventListener('click', ()=>{startMusic('loop')});
+playButton.addEventListener('click', ()=>{play()});
+loopButton.addEventListener('click', ()=>{loop()});
 pauseButton.addEventListener('click', ()=>{pause()});
 
 let buildPalette = function(colorTones){

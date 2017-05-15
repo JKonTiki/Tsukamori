@@ -15,8 +15,7 @@ export default class Synthesizer {
     this.synthGain = audioContext.createGain();
     this.synthGain.gain.value = .02 * Instrument.getInstrGain();
     this.effects = this.initializeConnections(tuna, destination);
-    this.startTime = null;
-    this.pauseTime = null;
+    this.startTime = 0;
     this.data = null;
     this.dataByRow = {};
     this.usedRows = null;
@@ -24,12 +23,16 @@ export default class Synthesizer {
     this.rowsStarted = [];
   }
 
-  playData(data, startTime, callback){
+  playData(data, timeElapsed, callback){
     let audioContext = this.audioContext;
     if (!audioContext) {
       throw errors.uninitiatedOscillator;
     }
-    this.startTime = audioContext.currentTime + .01;
+    // refresh things we track
+    this.instruments = {};
+    this.dataByRow = {};
+    this.rowsStarted = [];
+    this.startTime = audioContext.currentTime + .01 - timeElapsed;
     this.data = data;
     this.usedRows = this.getUsedRows(data);
     this.setSynths(this.usedRows);
@@ -44,7 +47,7 @@ export default class Synthesizer {
         }
         this.dataByRow[rowKey][colKey] = data[colKey][rowKey];
         this.scheduleActivity(colKey, rowKey);
-        this.scheduleInstrumentStop(this.instruments[rowKey], this.startTime + config.TOTAL_DURATION);
+        this.stopInstrument(this.instruments[rowKey], this.startTime + config.TOTAL_DURATION);
       }
     }
     if (callback) {
@@ -87,6 +90,10 @@ export default class Synthesizer {
       console.warn('no instrument at rowKey', rowKey);
       return;
     }
+    let triggerTime = this.startTime + (colKey * this.timeInterval)
+    if (triggerTime < 0) {
+      return;
+    }
     // console.log(this.data);
     let value = this.data[colKey][rowKey];
     let hasStarted = false;
@@ -96,32 +103,32 @@ export default class Synthesizer {
       this.rowsStarted.push(rowKey);
     }
     // ADSR envelope for instrument as a whole
-    instrument.gain.gain.setValueAtTime(MIN_GAIN, this.startTime + (colKey * this.timeInterval));
-    instrument.gain.gain.exponentialRampToValueAtTime(PEAK_GAIN, this.startTime + (colKey * this.timeInterval) + instrument.attack);
+    instrument.gain.gain.setValueAtTime(MIN_GAIN, triggerTime);
+    instrument.gain.gain.exponentialRampToValueAtTime(PEAK_GAIN, triggerTime + instrument.attack);
     if (instrument.attack + instrument.delay > this.timeInterval) {
-      instrument.gain.gain.exponentialRampToValueAtTime(PEAK_GAIN * instrument.sustain, this.startTime + (colKey * this.timeInterval) + instrument.attack + instrument.decay);
+      instrument.gain.gain.exponentialRampToValueAtTime(PEAK_GAIN * instrument.sustain, triggerTime + instrument.attack + instrument.decay);
     }
     if (!hasStarted) {
       for (var i = 0; i < instrument.harmonics.length; i++) {
         let harmonic = instrument.harmonics[i];
-        harmonic.oscillator.start(this.startTime + (colKey * this.timeInterval));
+        harmonic.oscillator.start(triggerTime);
       }
     }
     // launch LFO
     if (instrument.lfo) {
       if (!hasStarted) {
-        instrument.lfo.oscillator.start(this.startTime + (colKey * this.timeInterval));
+        instrument.lfo.oscillator.start(triggerTime);
       } else {
-        instrument.lfo.gain.gain.exponentialRampToValueAtTime(PEAK_GAIN, this.startTime + (colKey * this.timeInterval) + this.timeInterval);
+        instrument.lfo.gain.gain.exponentialRampToValueAtTime(PEAK_GAIN, triggerTime + this.timeInterval);
       }
     }
     if (instrument.noise) {
       // launch breathiness, increase gain over time starting from sustain
       if (!hasStarted) {
-        instrument.noise.node.start(this.startTime + (colKey * this.timeInterval));
-        instrument.noise.gain.gain.linearRampToValueAtTime(instrument.noise.peakGain, this.startTime + (colKey * this.timeInterval) + this.timeInterval); // we take extra time to avoid harsh cut
+        instrument.noise.node.start(triggerTime);
+        instrument.noise.gain.gain.linearRampToValueAtTime(instrument.noise.peakGain, triggerTime + this.timeInterval); // we take extra time to avoid harsh cut
       } else {
-        instrument.noise.gain.gain.linearRampToValueAtTime(instrument.noise.peakGain, this.startTime + (colKey * this.timeInterval) + this.timeInterval); // we take extra time to avoid harsh cut
+        instrument.noise.gain.gain.linearRampToValueAtTime(instrument.noise.peakGain, triggerTime + this.timeInterval); // we take extra time to avoid harsh cut
       }
     }
   }
@@ -132,30 +139,27 @@ export default class Synthesizer {
       console.warn('no instrument at rowKey', rowKey);
       return;
     }
-    let startRelease = (colKey * this.timeInterval) + (this.timeInterval - instrument.release);
-    if (startRelease > 0 || (this.isAlreadyPlaying(colKey, rowKey) && Math.abs(startRelease) < this.timeInterval)) {
-      // TODO this only starts release within one column, we could also make it recur checkhow long it has (how many prev columns already playing) to trigger release
-      instrument.gain.gain.setValueAtTime(PEAK_GAIN * instrument.sustain, this.startTime + startRelease);
+    let triggerTime = this.startTime + (colKey * this.timeInterval) + this.timeInterval;
+    if (triggerTime < 0) {
+      return;
     }
-    instrument.gain.gain.exponentialRampToValueAtTime(MIN_GAIN, this.startTime + (colKey * this.timeInterval) + this.timeInterval);
+    let triggerRelease = triggerTime - instrument.release;
+    if (triggerRelease > 0 || (this.isAlreadyPlaying(colKey, rowKey) && Math.abs(triggerRelease) < this.timeInterval)) {
+      // TODO this only starts release within one column, we could also make it recur checkhow long it has (how many prev columns already playing) to trigger release
+      instrument.gain.gain.setValueAtTime(PEAK_GAIN * instrument.sustain, triggerRelease);
+    }
+    instrument.gain.gain.exponentialRampToValueAtTime(MIN_GAIN, triggerTime);
     // stop LFO
     if (instrument.lfo) {
-      instrument.lfo.gain.gain.exponentialRampToValueAtTime(MIN_GAIN, this.startTime + (colKey * this.timeInterval) + this.timeInterval);
+      instrument.lfo.gain.gain.exponentialRampToValueAtTime(MIN_GAIN, triggerTime);
     }
     // stop noise
     if (instrument.noise) {
-      instrument.noise.gain.gain.linearRampToValueAtTime(MIN_GAIN, this.startTime + (colKey * this.timeInterval) + this.timeInterval * 2); // we need extra small gain for this as its pretty loud
+      instrument.noise.gain.gain.linearRampToValueAtTime(MIN_GAIN, triggerTime); // we need extra small gain for this as its pretty loud
     }
   }
 
-  pause(timeElapsed){
-    if (this.audioContext) {
-      this.pauseTime = timeElapsed;
-      console.log(this.pauseTime, 'is pauseTime');
-    }
-  }
-
-  scheduleInstrumentStop(instrument, stopTime){
+  stopInstrument(instrument, stopTime){
     for (var i = 0; i < instrument.harmonics.length; i++) {
       let harmonic = instrument.harmonics[i];
       try{
@@ -171,6 +175,12 @@ export default class Synthesizer {
           instrument.noise.node.stop(stopTime);
         } catch(e){console.log(e);};
       }
+    }
+  }
+
+  stopAllInstruments(){
+    for(let rowKey in this.instruments){
+      this.stopInstrument(this.instruments[rowKey], 0);
     }
   }
 
@@ -213,7 +223,7 @@ export default class Synthesizer {
       this.cancelNxtAttack(col, row);
     }
     if (newRow) {
-      this.scheduleInstrumentStop(this.instruments[row], this.startTime + config.TOTAL_DURATION);
+      this.stopInstrument(this.instruments[row], this.startTime + config.TOTAL_DURATION);
     }
   }
 
@@ -249,14 +259,12 @@ export default class Synthesizer {
 
   // ___HELPERS___
   setSynths(synthRows){
-    for (var i = 0; i < config.ROW_COUNT; i++) {
-      if (synthRows.includes(i)) {
-        let fundFreq = helpers.getFrequency(i, this.scaleKey);
-        let newInstrument = new this.Instrument(this.audioContext, fundFreq, config.BASE_FREQ);
-        this.instruments[i] = newInstrument;
-        // instrument history is so we can stop all if needed
-        this.instruments[i].connectTo(this.synthGain);
-      }
+    for (var i = 0; i < synthRows.length; i++) {
+      let rowIndex = synthRows[i];
+      let fundFreq = helpers.getFrequency(rowIndex, this.scaleKey);
+      let newInstrument = new this.Instrument(this.audioContext, fundFreq, config.BASE_FREQ);
+      this.instruments[rowIndex] = newInstrument;
+      this.instruments[rowIndex].connectTo(this.synthGain);
     }
   }
 
@@ -264,7 +272,10 @@ export default class Synthesizer {
     let usedRows = [];
     for (let colKey in data){
       for (let rowKey in data[colKey]){
-        usedRows.push(parseInt(rowKey));
+        let row = parseInt(rowKey);
+        if (usedRows.indexOf(row) === -1) {
+          usedRows.push(parseInt(row));
+        }
       }
     }
     return usedRows;
