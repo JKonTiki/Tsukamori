@@ -261,10 +261,12 @@ export default class Synthesizer {
   setSynths(synthRows){
     for (var i = 0; i < synthRows.length; i++) {
       let rowIndex = synthRows[i];
-      let fundFreq = helpers.getFrequency(rowIndex, this.scaleKey);
-      let newInstrument = new this.Instrument(this.audioContext, fundFreq, config.BASE_FREQ);
-      this.instruments[rowIndex] = newInstrument;
-      this.instruments[rowIndex].connectTo(this.synthGain);
+      if (!this.instruments[rowIndex]) {
+        let fundFreq = helpers.getFrequency(rowIndex, this.scaleKey);
+        let newInstrument = new this.Instrument(this.audioContext, fundFreq, config.BASE_FREQ);
+        this.instruments[rowIndex] = newInstrument;
+        this.instruments[rowIndex].connectTo(this.synthGain);
+      }
     }
   }
 

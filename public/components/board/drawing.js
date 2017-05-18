@@ -26,6 +26,7 @@ exports.angleBetween = function(point1, point2) {
 
 
 exports.visualizeMIDI = function(_context, data){
+  console.log('visualizeMIDI');
   _context.clearRect(0, 0, config.BOARD_WIDTH, config.BOARD_HEIGHT);
   for (var colIndex in data){
     let width = config.PXLS_PER_COL;

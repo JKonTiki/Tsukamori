@@ -110,21 +110,29 @@ exports.mount = function(colorTones, scaleKey){
 
 
   // mouse event activity listeners
-  let mouseHeld = false;
+  let brushHeld = false;
   boardSurfaceCtx.lineJoin = boardSurfaceCtx.lineCap = 'round';
   let mousedownFunc = function(event){
-    mouseHeld = true;
-    lastPoint = { x: event.offsetX, y: event.offsetY };
-    if (event.target.classList.value.indexOf('board') > -1) {
-      onTarget = true;
-    } else {
-      onTarget = false;
+    if (event.target.classList.value.indexOf('board') !== -1) {
+      brushHeld = true;
+      lastPoint = { x: event.offsetX, y: event.offsetY };
+      if (event.target.classList.value.indexOf('board') > -1) {
+        onTarget = true;
+      } else {
+        onTarget = false;
+      }
+    } else if (event.target.id.indexOf('playhead') !== -1){
+      console.log('playhead');
     }
   }
 
   let paintPoint = function(x, y){
-    activeBoard.context.drawImage(activeBoard.brush, x, y);
-    boardSurfaceCtx.drawImage(activeBoard.brush, x, y);
+    try{
+      activeBoard.context.drawImage(activeBoard.brush, x, y);
+      boardSurfaceCtx.drawImage(activeBoard.brush, x, y);
+    } catch(e){
+      return;
+    }
     let newQuad = newQuadrant({x, y});
     if (visualizerInterval && newQuad) {
       activeBoard.synthesizer.mergeInData(parsing.invertCanvasData(newQuad));
@@ -136,7 +144,7 @@ exports.mount = function(colorTones, scaleKey){
   }
 
   let mouseupFunc = function(event){
-    mouseHeld = false;
+    brushHeld = false;
     activeBoard.context.beginPath();
     let thisPoint = { x: event.offsetX, y: event.offsetY };
     if (lastPoint && onTarget) {
@@ -148,7 +156,7 @@ exports.mount = function(colorTones, scaleKey){
 
   let mouseMoveProxy = function(event){
     helpers.pauseEvent(event);
-    if (!mouseHeld) return;
+    if (!brushHeld) return;
     if (event.target.classList.value.indexOf('board') > -1 && !onTarget) {
       // if we are coming back on board, make this the new last point
       onTarget = true;
@@ -208,7 +216,7 @@ exports.unmount = function(){
   document.removeEventListener('mouseup', mouseupFunc);
 };
 
-let play = function(audioContext, destination, analyser, tuna){
+let play = function(audioContext, destination, analyser, tuna, looping){
   lastStartTime = audioContext.currentTime;
   // PLAYHEAD
   let playheadCallback = function(){
@@ -241,19 +249,22 @@ let play = function(audioContext, destination, analyser, tuna){
   }, config.VISUALIZER_FRAME_RATE);
   // set to clear at the end of the run
   let thisInterval = visualizerInterval;
-  setTimeout(()=>{
-    clearInterval(thisInterval);
-    if (thisInterval === visualizerInterval) {
-      visualizerInterval = null;
-      visualizer.clear();
-    }
-  }, (config.TOTAL_DURATION) * 1000);
+  if (!looping) {
+    setTimeout(()=>{
+      console.log('clearing stuff');
+      clearInterval(thisInterval);
+      if (thisInterval === visualizerInterval) {
+        visualizerInterval = null;
+        visualizer.clear();
+      }
+    }, (config.TOTAL_DURATION) * 1000);
+  }
 }
 
 exports.play = play;
 
-exports.loop = function(){
-  console.log('coming soon!');
+exports.loop = function(audioContext, destination, analyser, tuna){
+  play(audioContext, destination, analyser, tuna, true);
 }
 
 let clearSounds = function(){
@@ -267,7 +278,8 @@ let clearSounds = function(){
   }
 }
 
-exports.pause = function(audioContext){
+let pause = function(audioContext){
+  console.log('pausing');
   if (!visualizerInterval) return;
   timeElapsed += audioContext.currentTime - lastStartTime;
   lastStartTime = 0;
@@ -276,7 +288,10 @@ exports.pause = function(audioContext){
   clearSounds();
 }
 
+exports.pause = pause;
+
 let stop = function(audioContext){
+  console.log('stopping');
   timeElapsed = 0;
   lastStartTime = 0;
   backdrop.setPlayhead(playhead);

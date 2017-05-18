@@ -39,6 +39,7 @@ var visualizeAudio = function(audioContext, analyser){
 }
 
 exports.clear = function(){
+  console.log('clearing visualizer');
   context.fillStyle = '#eee';
   context.fillRect(0, 0, visualizer.width, visualizer.height);
 }

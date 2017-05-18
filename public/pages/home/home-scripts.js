@@ -44,7 +44,7 @@ exports.mount = function(){
     // 'dfd560': Kazoo,
     // '5a5542': Flute,
   });
-  let view11 = new Preset('view11', null, 'pentMinor', {
+  let view11 = new Preset('view11', null, 'yo', {
     '2a6263': Flute,
     'f9dd9c': Kazoo,
     '204a9b': Wind,
