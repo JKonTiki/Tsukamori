@@ -102,7 +102,7 @@ export default class Flute {
 
   static getEffects(tuna){
     let effects = {};
-    effects.entryPoint = 'chorus';
+    effects.entryPoint = 'tremolo';
     effects.exitPoint = 'reverb';
     effects.tremolo = new tuna.Tremolo({
       intensity: .1,
@@ -132,7 +132,7 @@ export default class Flute {
       impulse: `./../../assets/impulse-responses/Large Wide Echo Hall.wav`,
       bypass: 0
     });
-    // effects.tremolo.connect(effects.chorus);
+    effects.tremolo.connect(effects.chorus);
     effects.chorus.connect(effects.reverb);
     // effects.reverb.connect(effects.lowPassFilter);
     return effects;

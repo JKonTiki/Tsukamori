@@ -29,11 +29,11 @@ export default class Kazoo {
     this.harmonics.push(new Harmonic(audioContext, dissonantFreq, 1, .5 * gainRatio, this.gain, waveShape));
     this.harmonics.push(new Harmonic(audioContext, dissonantFreq, 2, .5 * gainRatio, this.gain, waveShape));
     // this.lfo = this.initializeLFO(); // each instrument has its own lfo for vibrato simulation
-    this.noise = this.initializeNoise(); // we play with the buffer during attack for a little breathiness
+    // this.noise = this.initializeNoise(); // we play with the buffer during attack for a little breathiness
   }
 
   static getInstrGain(){
-    return .4;
+    return 1;
   }
 
   initializeNoise(){
@@ -102,7 +102,7 @@ export default class Kazoo {
   static getEffects(tuna){
     let effects = {};
     effects.entryPoint = 'moog';
-    effects.exitPoint = 'wahwah';
+    effects.exitPoint = 'lowPassFilter';
     effects.tremolo = new tuna.Tremolo({
       intensity: .1,
       rate: 8,
@@ -156,7 +156,7 @@ export default class Kazoo {
     effects.moog.connect(effects.phaser);
     effects.phaser.connect(effects.bitcrusher);
     effects.bitcrusher.connect(effects.lowPassFilter);
-    effects.lowPassFilter.connect(effects.wahwah);
+    // effects.lowPassFilter.connect(effects.wahwah);
     // effects.moog.connect(effects.reverb);
     return effects;
   }

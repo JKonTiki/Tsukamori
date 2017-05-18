@@ -266,6 +266,8 @@ export default class Synthesizer {
         let newInstrument = new this.Instrument(this.audioContext, fundFreq, config.BASE_FREQ);
         this.instruments[rowIndex] = newInstrument;
         this.instruments[rowIndex].connectTo(this.synthGain);
+      } else {
+        console.warn(rowIndex, this.instruments);
       }
     }
   }
